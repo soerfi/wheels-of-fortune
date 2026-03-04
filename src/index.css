@@ -1,0 +1,14 @@
+@import url('https://fonts.googleapis.com/css2?family=Anton&family=Epilogue:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Epilogue", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Anton", ui-sans-serif, system-ui, sans-serif;
+}
+
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  filter: invert(1);
+  width: 24px;
+  height: 24px;
+}

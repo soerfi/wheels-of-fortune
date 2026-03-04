@@ -1,0 +1,5 @@
+{
+  "name": "SKATE.CH Glücksrad",
+  "description": "Ein Online-Glücksrad für SKATE.CH mit dynamischer Gewinnwahrscheinlichkeit, Gutscheingenerierung und Admin-Dashboard.",
+  "requestFramePermissions": []
+}
