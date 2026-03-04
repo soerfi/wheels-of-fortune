@@ -28,7 +28,7 @@ Das Projekt zeichnet sich durch ein **Single-Spin System** (1 Dreh pro Browser v
 ## 🗄 Datenbank Schema (`skate_wheel.db`)
 Das Projekt nutzt eine leichtgewichtige SQLite-Datenbank (`WAL` Mode aktiv für Concurrency).
 1. **`settings`**: Steuert die globalen Zeitfenster (JSON Field `active_slots` als `[{from, to}]`) und das Voucher-Hintergrundbild.
-2. **`prizes`**: Die verfügbaren Preise auf dem Rad (`id, name, color`).
+2. **`prizes`**: Die verfügbaren Preise auf dem Rad (`id`, `name`, `color` (legacy), `description`, `value`, `weight`). Die Farbe hat keinen Einfluss mehr auf das Rad, da es ein Black/White Design hat. `value` ist der ausgeschriebene Wert (z.B. "CHF 50.-") und `weight` steuert die Gewinnwahrscheinlichkeit (1 = selten, 100 = häufig).
 3. **`prize_codes`**: Die via CSV importierten, realen ERP-Codes. Mapping erfolgt über `prize_id`. Beinhaltet den spezifischen `Wert` und einen `is_used` Boolean.
 4. **`winners`**: Loggt jeden Gewinner (`prize_id, code, won_at, user_name, user_email`).
 
@@ -36,14 +36,15 @@ Das Projekt nutzt eine leichtgewichtige SQLite-Datenbank (`WAL` Mode aktiv für 
 
 ## ⚙️ Wie funktioniert der Code-Flow?
 1. **CSV Import (Admin):**
-   * Die CSV MUSS folgendes Format/Header haben: `Marke` (oder `Text`), `Code`, `Wert:` (oder `Wert`).
+   * Die CSV MUSS folgendes Format/Header haben: `Name`, `Beschreibung`, `Wert`, `Gewichtung`, `Code`.
    * Trennzeichen ist auf **Europäisches Excel Format (Semikolon `;`)** eingestellt.
    * Das Backend übersetzt die Header in `prizes` (wenn neu) und befüllt `prize_codes` mit den Codes. Bereits bekannte Codes werden via `INSERT OR IGNORE` übersprungen.
-2. **Der Spin (User):**
+2. **Der Spin (User) - Weighted Random & Atomare Sicherheit:**
    * POST `/api/spin` checkt serverseitig: Ist die aktuelle Zeit in einem der `active_slots`?
-   * Sammelt alle `prizes`, die noch **unbenutzte Codes** (`is_used = 0`) haben. Hat ein Preis 0 Codes, verschwindet er komplett aus dem Array (Nieten-Schutz).
-   * Pickt via Weighted-Random (Menge = Wahrscheinlichkeit) einen noch verfügbaren Preis, markiert sofort einen zugehörigen Code als `is_used = 1` und loggt ihn in `winners`.
-   * **Sicherheit:** Der echte Code String wird dem Frontend *nicht* zurückgegeben! Nur die ID und der Name des Preis-Objekts.
+   * Sammelt alle `prizes`, die noch **unbenutzte Codes** (`is_used = 0`) haben. Hat ein Preis 0 Codes, verschwindet er komplett aus dem Array (Nieten-Schutz & Verhindert Double-Spending von ausverkauften Preisen).
+   * **Weighted Random Calculation:** Anstatt einer exakten `1 / n` Chance, berechnet der Server das Total aller Gewichte der `verfügbaren` Preise. Eine Zufallszahl entscheidet auf Basis dieses Gesamtgewichts den Gewinner. Der sicher zugewiesene Code wird sofort per `is_used = 1` in einer SQL-Transaction blockiert!
+   * **18-Slice Wheel Mapping:** Das React-Frontend nutzt das Backend-Datenarray, um **immer exakt 18 physikalische Rad-Sektoren** zu zeichnen. Der wertvollste Preis (kleinstes Gewichting) belegt starr 1 Slot. Die 17 restlichen Slots werden basierend auf den anderen Preisen / Trostpreisen aufgefüllt und anschliessend beim Seitenaufruf geshufflet. Egal wie viele Sektoren z.B. der Trostpreis einnimmt, das Frontend "weisss", auf welchem Sektor es physisch landen darf.
+   * **Sicherheit:** Der echte gewonnene Code String wird dem Frontend *nicht* zusammen mit dem Spin-Resultat zurückgegeben!
 3. **Lead & Versand:**
    * User gibt im `VoucherModal` Name + E-Mail ein.
    * PUT `/api/winners/:id` speichert die Kontaktdaten und triggert den Resend-Block. Die E-Mail zieht sich aus `winners`, `prizes` und `prize_codes` alle benötigten Bausteine (`prize_name`, `prize_value`, `code`).
@@ -88,7 +89,8 @@ Beim Ausrollen der App auf einen Live-Server (z.B. VPS oder Docker-Umgebung) mü
 ---
 
 ## 🐛 Known Pitfalls & Debugging (Für spätere AI Agents)
+- **Rate-Limiting (IP-Lock):** Normalerweise darf eine IP nur alle 60 Minuten drehen (`express-rate-limit` windowMs). Zum Testen ist in `.env` oder Startparametern `NODE_ENV !== 'production'` implementiert. Startest du die App mittels `npm run dev`, ist die IP-Sperre in `server.ts` ausser Kraft gesetzt (über den `skip` check im RateLimiter) — localStorage Sperren müssen aber im Browser manuell gelöscht werden (Click-Target "Schon gedreht!" Box resetted den LocalStorage im Dev-Mode).
 - **SQLite Missing Parameter Crash:** Die `better-sqlite3` Statements (`.get()` oder `.run()`) tolerieren im neuen Node Setup keine fehlenden Arrays/Mappings, wenn `WHERE id = ?` genutzt wird. Immer `db.prepare(...).get(p.id)` ausfüllen, ansonsten crasht die API Route in einen 500 Error und das UI triggert "Keine Preise vorhanden".
-- **PapaParse / CSV Header Hölle:** Europäische Excels exportieren oft mit Semicolons `;` statt echten Kommas. Der PapaParse Block in `AdminPage.tsx` nutzt keine hardcodierten Delimiter mehr, sondern checkt smart Header. Bleibt der Upload bei `0 imported` hängen – unbedingt den `BOM` Header oder das Trennzeichen checken.
+- **PapaParse / CSV Header Hölle:** Europäische Excels exportieren oft mit Semicolons `;` statt echten Kommas. Der PapaParse Block in `AdminPage.tsx` nutzt keine hardcodierten Delimiter mehr, sondern checkt smart Header. Bleibt der Upload bei `0 imported` hängen – unbedingt den `BOM` Header (`\uFEFF`) oder das Trennzeichen (`semicolon`) checken.
 - **Timer verschwunden?** Wenn das `JSON.parse` des `active_slots` Arrays fehlschlägt, fällt das Rad auf *Aktion Beendet* und berechnet keinen `nextSlotDate`.
-- **Admin Fetching:** `/api/prizes` nutzt Request-Header (`x-admin-password`) um festzustellen, ob versteckte "0-Code-Preise" an das React-Dashboard gesendet werden dürfen. Wenn diese fehlen, sieht der Admin keine leeren Preise mehr.
+- **API Security Authentication:** Routen verlangen JWT Tokens (im Header `Authorization: Bearer <token>`). Fallbacks wie `x-admin-password` sollten vermieden werden. AdminPage ist vollständig auf die JWT Authentifizierung via `login` Endpoint migriert.
