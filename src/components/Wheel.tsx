@@ -74,10 +74,10 @@ export default function Wheel({ prizes, onSpin, onSpinComplete }: WheelProps) {
       // Pick a random slot among the matches
       const winningIndex = matchingIndices[Math.floor(Math.random() * matchingIndices.length)];
 
-      // Skater is located at -left-[4%], which is perfectly horizontally left, so 270 degrees.
-      // Text sits at (winningIndex * 20) + 10. We want the winning text to land exactly at 270.
+      // Skater is located at -left-[4%], rotated -10deg. The physical position is visual 260 degrees.
+      // Text acts as the trailing pin. We want to stop 10 degrees earlier to land exactly in the center of the slice.
       const currentRotation = rotateX.get();
-      const targetAngle = 270 - (winningIndex * sliceAngle + sliceAngle / 2);
+      const targetAngle = 230 - (winningIndex * sliceAngle);
 
       // Decreased extra spins to 8 so the wheel moves convincingly but slower over 15 seconds
       const extraSpins = 8 * 360;
