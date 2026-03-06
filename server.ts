@@ -363,33 +363,75 @@ async function startServer() {
         `).get(req.params.id) as any;
 
         if (winner) {
+          // Determine app URL to serve background image dynamically
+          const appUrl = process.env.VITE_APP_URL || 'https://winner.skate.ch';
+          const backgroundUrl = `${appUrl}/Mail-Background.jpg`;
+
           await resend.emails.send({
-            from: process.env.FROM_EMAIL || 'onboarding@resend.dev',
+            from: process.env.FROM_EMAIL || 'gewinn@winner.skate.ch',
             to: user_email,
-            subject: 'Dein SKATE.CH Gewinn!',
+            subject: 'Dein SKATE.CH Gewinn zum 10-jährigen Jubiläum!',
             html: `
-              <div style="font-family: 'Arial', sans-serif; max-width: 600px; margin: 0 auto; background-color: #000; color: #fff; padding: 40px; border: 4px solid #EF4444;">
-                <h1 style="color: #EF4444; font-size: 32px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 5px;">SKATE.CH</h1>
-                <h2 style="color: #fff; font-size: 24px; text-transform: uppercase; margin-top: 0; letter-spacing: 1px;">Dein Gewinn!</h2>
-                <hr style="border-color: #EF4444; margin-bottom: 30px;">
-                <p style="font-size: 16px; line-height: 1.6; color: #e4e4e7;">
-                  Hey <strong>${user_name}</strong>,<br><br>
-                  Du hast am Wheel of Fortune teilgenommen und gewonnen! 
-                  Hier ist dein Preis: <strong style="color: #EF4444;">${winner.prize_name}</strong>.
-                </p>
-                ${winner.prize_description ? `<p style="font-size: 14px; color: #a1a1aa; margin-top: -10px; font-style: italic;">${winner.prize_description}</p>` : ''}
-
-                
-                ${winner.prize_value ? `<div style="margin-top: 20px;"><span style="color: #a1a1aa; text-transform: uppercase; font-size: 12px; font-weight: bold; letter-spacing: 1px;">Wert</span><br><span style="font-size: 24px; font-weight: bold; color: #EF4444;">${winner.prize_value}</span></div>` : ''}
-
-                <div style="background-color: #fff; color: #000; padding: 20px; font-size: 32px; font-weight: bold; text-align: center; margin: 30px 0; border: 4px solid #000; font-family: monospace;">
-                  ${winner.code}
-                </div>
-                
-                <p style="color: #a1a1aa; font-size: 14px;">
-                  Löse deinen ERP-Gutscheincode einfach bei deinem nächsten Einkauf im Kassenbereich bei <a href="https://skate.ch" style="color: #EF4444; text-decoration: none; font-weight: bold;">SKATE.CH</a> ein!<br><br>
-                  Keep rolling,<br>SKATE.CH Team
-                </p>
+              <div style="background-color: #f4f4f5; padding: 40px 0;">
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
+                  <tr>
+                    <td align="center" style="padding: 30px 20px 20px 20px; text-align: center;">
+                      <h1 style="color: #EF4444; font-size: 28px; font-weight: 900; letter-spacing: 2px; margin: 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">10 JAHRE SKATE.CH</h1>
+                      <p style="color: #71717a; font-size: 16px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; margin-top: 10px;">Vielen Dank für deine Teilnahme am Gewinnspiel!</p>
+                    </td>
+                  </tr>
+                  
+                  <tr>
+                    <td style="padding: 10px 40px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 16px; line-height: 1.6; color: #3f3f46;">
+                      Hey <strong>${user_name}</strong>,<br><br>
+                      Wir freuen uns sehr – du hast an unserem Wheel of Fortune gedreht und kräftig abgeräumt! Hier ist dein Gewinn:<br>
+                      <strong style="color: #EF4444; font-size: 18px;">${winner.prize_name}</strong>
+                    </td>
+                  </tr>
+                  
+                  <tr>
+                    <td style="padding: 30px 40px;">
+                      <!-- Graphic Voucher Box -->
+                      <table width="100%" cellpadding="0" cellspacing="0" border="0" background="${backgroundUrl}" style="background-image: url('${backgroundUrl}'); background-size: cover; background-position: center; border-radius: 12px; background-color: #18181b; border: 3px solid #EF4444;">
+                        <tr>
+                          <!-- Added dark fallback overlay for text readability -->
+                          <td style="background: rgba(0,0,0,0.65); border-radius: 9px; padding: 40px 30px; text-align: left;">
+                            <p style="color: #EF4444; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-weight: bold; font-size: 14px; letter-spacing: 2px; margin: 0; text-transform: uppercase;">Dein Gutschein</p>
+                            
+                            <h2 style="color: #ffffff; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 34px; font-weight: 900; margin: 8px 0 10px 0;">${winner.prize_value ? winner.prize_value : winner.prize_name}</h2>
+                            <p style="color: #d4d4d8; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 16px; margin: 0 0 35px 0; font-style: italic;">${winner.prize_description || 'Einlösbar bei deinem nächsten Einkauf'}</p>
+                            
+                            <table cellpadding="0" cellspacing="0" border="0">
+                              <tr>
+                                <td style="background: #ffffff; padding: 12px 25px; border-radius: 6px; text-align: center;">
+                                  <p style="color: #71717a; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 12px; margin: 0; text-transform: uppercase; font-weight: bold;">Gutscheincode</p>
+                                  <p style="color: #18181b; font-family: 'Courier New', Courier, monospace; font-size: 26px; font-weight: 900; margin: 5px 0 0 0; letter-spacing: 3px;">${winner.code}</p>
+                                </td>
+                              </tr>
+                            </table>
+                            
+                            <p style="color: #a1a1aa; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 12px; margin-top: 30px; margin-bottom: 0; text-transform: uppercase; font-weight: bold;">Gültig bis 30. April 2026</p>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                  
+                  <tr>
+                    <td align="center" style="padding: 20px 40px 40px 40px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
+                      <p style="font-size: 16px; color: #3f3f46; margin-bottom: 25px; line-height: 1.6;">
+                        Besuche einfach unseren Webshop und gib deinen Gutscheincode direkt am Ende des Bestellvorgangs ein.<br>Wir freuen uns auf dich!
+                      </p>
+                      <a href="https://skate.ch" style="display: inline-block; background-color: #EF4444; color: #ffffff; text-decoration: none; padding: 16px 36px; font-weight: bold; border-radius: 30px; text-transform: uppercase; letter-spacing: 1.5px; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);">Jetzt online einlösen</a>
+                    </td>
+                  </tr>
+                  
+                  <tr>
+                     <td align="center" style="padding: 20px; background-color: #f4f4f5; text-align: center;">
+                        <p style="color: #a1a1aa; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 12px; margin: 0;">&copy; 2026 SKATE.CH – Keep Rolling.</p>
+                     </td>
+                  </tr>
+                </table>
               </div>
             `
           });
