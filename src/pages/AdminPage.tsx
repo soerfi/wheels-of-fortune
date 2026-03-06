@@ -14,7 +14,7 @@ export default function AdminPage() {
 
   // Form states
   const [editingPrize, setEditingPrize] = useState<any>(null);
-  const [newPrize, setNewPrize] = useState({ name: '', color: '#EF4444', description: '', quantity: 10, prefix: '', custom_codes: '' });
+  const [newPrize, setNewPrize] = useState({ name: '', color: '#EF4444', description: '', quantity: 10, prefix: '', custom_codes: '', is_jackpot: false });
   const [generateCodesState, setGenerateCodesState] = useState<{ id: number, add_quantity: number, prefix: string } | null>(null);
   const [password, setPassword] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -103,7 +103,7 @@ export default function AdminPage() {
         return;
       }
 
-      setNewPrize({ name: '', description: '', value: '', weight: 1, quantity: 10, prefix: '', custom_codes: '' });
+      setNewPrize({ name: '', color: '#EF4444', description: '', quantity: 10, prefix: '', custom_codes: '', is_jackpot: false });
       fetchData();
     } catch (err) {
       setAppAlert({ type: 'error', message: 'Fehler beim Hinzufügen.' });
@@ -379,9 +379,17 @@ export default function AdminPage() {
                       <input type="number" min="1" value={newPrize.weight || 1} onChange={e => setNewPrize({ ...newPrize, weight: parseInt(e.target.value) || 1 })} className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-red-500" placeholder="z.B. 10" />
                     </div>
                   </div>
-                  <div>
-                    <label className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">Beschreibung (für Win-Popup / E-Mail)</label>
-                    <textarea value={newPrize.description} onChange={e => setNewPrize({ ...newPrize, description: e.target.value })} className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-red-500" placeholder="Du erhältst 50 CHF Rabatt auf deinen nächsten Einkauf..." rows={2} />
+                  <div className="flex gap-6">
+                    <div className="flex-1">
+                      <label className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">Beschreibung (für Win-Popup / E-Mail)</label>
+                      <textarea value={newPrize.description} onChange={e => setNewPrize({ ...newPrize, description: e.target.value })} className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-red-500" placeholder="Du erhältst 50 CHF Rabatt auf deinen nächsten Einkauf..." rows={2} />
+                    </div>
+                    <div className="w-48 flex items-center bg-zinc-950 border border-zinc-800 rounded-lg px-4">
+                      <label className="flex items-center gap-3 cursor-pointer w-full">
+                        <input type="checkbox" checked={newPrize.is_jackpot} onChange={e => setNewPrize({ ...newPrize, is_jackpot: e.target.checked })} className="w-5 h-5 accent-yellow-500 rounded border-zinc-700 bg-zinc-900" />
+                        <span className="text-sm font-bold text-yellow-500 uppercase tracking-wider">Jackpot Preis</span>
+                      </label>
+                    </div>
                   </div>
 
                   {/* CODES OPTIONS */}
@@ -449,7 +457,13 @@ export default function AdminPage() {
                                 <input type="text" value={editingPrize.value || ''} onChange={e => setEditingPrize({ ...editingPrize, value: e.target.value })} className="flex-1 bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-white" placeholder="Wert..." title="Wert" />
                                 <input type="number" min="1" value={editingPrize.weight || 1} onChange={e => setEditingPrize({ ...editingPrize, weight: parseInt(e.target.value) || 1 })} className="w-20 bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-white" placeholder="Gew." title="Gewichtung" />
                               </div>
-                              <textarea value={editingPrize.description || ''} onChange={e => setEditingPrize({ ...editingPrize, description: e.target.value })} className="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-white text-sm" placeholder="Beschreibung (für E-Mail und WIN-Popup)" rows={2} />
+                              <div className="flex gap-4 items-start">
+                                <textarea value={editingPrize.description || ''} onChange={e => setEditingPrize({ ...editingPrize, description: e.target.value })} className="flex-1 bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-white text-sm" placeholder="Beschreibung (für E-Mail und WIN-Popup)" rows={2} />
+                                <label className="flex items-center gap-3 cursor-pointer bg-zinc-900 border border-zinc-700 rounded px-4 py-3 w-48 shrink-0">
+                                  <input type="checkbox" checked={!!editingPrize.is_jackpot} onChange={e => setEditingPrize({ ...editingPrize, is_jackpot: e.target.checked })} className="w-5 h-5 accent-yellow-500 rounded border-zinc-700 bg-zinc-950" />
+                                  <span className="text-sm font-bold text-yellow-500 uppercase tracking-wider">Jackpot</span>
+                                </label>
+                              </div>
                               <div className="flex justify-end gap-2">
                                 <button type="submit" className="px-4 py-2 bg-green-600 hover:bg-green-500 rounded text-white flex items-center gap-2 text-sm"><Save size={16} /> Speichern</button>
                                 <button type="button" onClick={() => setEditingPrize(null)} className="px-4 py-2 bg-zinc-700 hover:bg-zinc-600 rounded text-white text-sm flex items-center gap-2"><X size={16} /> Abbrechen</button>
@@ -459,7 +473,10 @@ export default function AdminPage() {
                         ) : (
                           <>
                             <td className="px-6 py-4">
-                              <div className="font-bold text-white text-lg">{prize.name}</div>
+                              <div className="font-bold text-white text-lg flex items-center gap-2">
+                                {prize.is_jackpot ? <span title="Jackpot Preis" className="text-yellow-500">★</span> : null}
+                                {prize.name}
+                              </div>
                               {prize.description && <div className="text-sm text-zinc-500 mt-1">{prize.description}</div>}
                             </td>
                             <td className="px-6 py-4 w-40">

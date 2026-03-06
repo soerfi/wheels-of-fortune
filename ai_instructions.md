@@ -8,7 +8,7 @@ Das Projekt zeichnet sich durch ein **Single-Spin System** (1 Dreh pro Browser v
 ---
 
 ## 🏗 Architektur & Tech-Stack
-* **Frontend:** React 18, Vite, Tailwind CSS v4, Lucide React, PapaParse (für CSV Import im Admin), HTML5 Canvas für das Rad (`components/Wheel.tsx`).
+* **Frontend:** React 18, Vite, Tailwind CSS v4, Lucide React, PapaParse (für CSV Import im Admin), HTML5 Canvas-ähnliche SVG Manipulation (`components/Wheel.tsx`).
 * **Backend:** Node.js, Express.
 * **Datenbank:** `better-sqlite3` (lokale Datei `skate_wheel.db` im Root-Verzeichnis).
 * **Emails:** `resend` SDK.
@@ -28,7 +28,7 @@ Das Projekt zeichnet sich durch ein **Single-Spin System** (1 Dreh pro Browser v
 ## 🗄 Datenbank Schema (`skate_wheel.db`)
 Das Projekt nutzt eine leichtgewichtige SQLite-Datenbank (`WAL` Mode aktiv für Concurrency).
 1. **`settings`**: Steuert die globalen Zeitfenster (JSON Field `active_slots` als `[{from, to}]`) und das Voucher-Hintergrundbild.
-2. **`prizes`**: Die verfügbaren Preise auf dem Rad (`id`, `name`, `color` (legacy), `description`, `value`, `weight`). Die Farbe hat keinen Einfluss mehr auf das Rad, da es ein Black/White Design hat. `value` ist der ausgeschriebene Wert (z.B. "CHF 50.-") und `weight` steuert die Gewinnwahrscheinlichkeit (1 = selten, 100 = häufig).
+2. **`prizes`**: Die verfügbaren Preise auf dem Rad (`id`, `name`, `color` (legacy), `description`, `value`, `weight`, `is_jackpot`). `value` ist der ausgeschriebene Wert (z.B. "CHF 50.-") und `weight` steuert die Gewinnwahrscheinlichkeit (1 = selten, 100 = häufig). Das Flag `is_jackpot` bestimmt, ob ein Preis fix auf dem speziellen Goldenen Segment platziert werden soll.
 3. **`prize_codes`**: Die via CSV importierten, realen ERP-Codes. Mapping erfolgt über `prize_id`. Beinhaltet den spezifischen `Wert` und einen `is_used` Boolean.
 4. **`winners`**: Loggt jeden Gewinner (`prize_id, code, won_at, user_name, user_email`).
 
@@ -43,10 +43,11 @@ Das Projekt nutzt eine leichtgewichtige SQLite-Datenbank (`WAL` Mode aktiv für 
    * POST `/api/spin` checkt serverseitig: Ist die aktuelle Zeit in einem der `active_slots`?
    * Sammelt alle `prizes`, die noch **unbenutzte Codes** (`is_used = 0`) haben. Hat ein Preis 0 Codes, verschwindet er komplett aus dem Array (Nieten-Schutz & Verhindert Double-Spending von ausverkauften Preisen).
    * **Weighted Random Calculation:** Anstatt einer exakten `1 / n` Chance, berechnet der Server das Total aller Gewichte der `verfügbaren` Preise. Eine Zufallszahl entscheidet auf Basis dieses Gesamtgewichts den Gewinner. Der sicher zugewiesene Code wird sofort per `is_used = 1` in einer SQL-Transaction blockiert!
-   * **18-Slice Wheel Mapping:** Das React-Frontend nutzt das Backend-Datenarray, um **immer exakt 18 physikalische Rad-Sektoren** zu zeichnen. Der wertvollste Preis (kleinstes Gewichting) belegt starr 1 Slot. Die 17 restlichen Slots werden basierend auf den anderen Preisen / Trostpreisen aufgefüllt und anschliessend beim Seitenaufruf geshufflet. Egal wie viele Sektoren z.B. der Trostpreis einnimmt, das Frontend "weisss", auf welchem Sektor es physisch landen darf.
-   * **Sicherheit:** Der echte gewonnene Code String wird dem Frontend *nicht* zusammen mit dem Spin-Resultat zurückgegeben!
+   * **18-Slice Wheel Mapping & Jackpot Logic:** Das React-Frontend nutzt das Backend-Datenarray, um **immer exakt 18 physikalische Rad-Sektoren** zu rendern, basierend auf einer SVG-Grafik (`Wheel-of-Fortune.svg`). Der wertvollste Preis (bzw. der mit `is_jackpot=1`) belegt starr den Index 2 (ein goldenes optisches Segment). Die restlichen Slots werden basierend auf den anderen Preisen und Trostpreisen aufgefüllt und anschliessend geshufflet.
+   * **Physik:** Das Rad dreht sich mit einer langsamen, kinematik-basierten Physik ca. 15 Sekunden. Der Pointer (ein Skater-Bild) hebt und senkt sich basierend auf den visualisierten Pins des Rads.
+   * **Sicherheit:** Der echte gewonnene Code String wird dem Frontend *nicht* zusammen mit dem Spin-Resultat zurückgegeben, sondern bleibt verdeckt, bis das E-Mail-Formular abgesendet ist!
 3. **Lead & Versand:**
-   * User gibt im `VoucherModal` Name + E-Mail ein.
+   * User gibt im `VoucherModal` Name + E-Mail ein (Erscheint nach 5 Sek. Stillstand des Rads).
    * PUT `/api/winners/:id` speichert die Kontaktdaten und triggert den Resend-Block. Die E-Mail zieht sich aus `winners`, `prizes` und `prize_codes` alle benötigten Bausteine (`prize_name`, `prize_value`, `code`).
 
 ---

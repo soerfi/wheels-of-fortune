@@ -30,13 +30,16 @@ export default function Wheel({ prizes, onSpin, onSpinComplete }: WheelProps) {
   const pointerRotate = useTransform(rotateX, (v) => {
     if (numPrizes === 0) return 0;
 
-    // Normalize v to positive layout
-    const normalizedV = ((v % 360) + 360) % 360;
+    // Normalize v to positive layout.
+    // Skater is at 260 degrees (10 deg above Left/270). Pegs are at i * 20 + 10.
+    // Alignment shift calculation: (v - 10) % 20 == 0 when peg hits Skater.
+    const shiftedV = v - 10;
+    const normalizedV = ((shiftedV % 360) + 360) % 360;
     const dist = sliceAngle - (normalizedV % sliceAngle);
 
     // Physics parameters
     const liftThreshold = sliceAngle * 0.15; // Start lifting when peg is 15% of a slice away
-    const maxLift = -35; // Pointer pivots left (counter-clockwise) when hit by peg from left
+    const maxLift = -35; // Pointer pivots upwards when hit by peg from below (since it's on the left and wheel is clockwise)
 
     if (dist <= liftThreshold) {
       // Lifting up smoothly as peg approaches
@@ -60,19 +63,24 @@ export default function Wheel({ prizes, onSpin, onSpinComplete }: WheelProps) {
       const result = await onSpin();
 
       // Find all indices of the winning prize (since we now have 18 slots with duplicates)
-      const matchingIndices = prizes.map((p, index) => p.id === result.prize.id ? index : -1).filter(i => i !== -1);
+      let matchingIndices = prizes.map((p, index) => p.id === result.prize.id ? index : -1).filter(i => i !== -1);
 
-      if (matchingIndices.length === 0) throw new Error("Winning prize not found on wheel");
+      if (matchingIndices.length === 0) {
+        // Fallback if the backend selected a prize that didn't fit into the 18 visual slots
+        console.warn("Winning prize not displayed visually, falling back to Trostpreis slot for animation.");
+        matchingIndices = [prizes.length - 1]; // Spin to the last slot (usually the Trostpreis padding)
+      }
 
       // Pick a random slot among the matches
       const winningIndex = matchingIndices[Math.floor(Math.random() * matchingIndices.length)];
 
-      // We want winningIndex slice to end up at the TOP (which is angle 0 before the -90 offset).
+      // Skater is rotated -10deg from the horizontal left, meaning Skater sits at angle 260.
+      // Text sits at (winningIndex * 20) + 20. We want the winning text to land exactly at 260.
       const currentRotation = rotateX.get();
-      const targetAngle = 360 - (winningIndex * sliceAngle + sliceAngle / 2);
+      const targetAngle = 260 - (winningIndex * sliceAngle + 20);
 
-      // Calculate total rotation: current + full spins + delta to target
-      const extraSpins = 5 * 360;
+      // Decreased extra spins to 8 so the wheel moves convincingly but slower over 15 seconds
+      const extraSpins = 8 * 360;
       const normalizedCurrent = ((currentRotation % 360) + 360) % 360;
       const rotationDelta = targetAngle - normalizedCurrent;
 
@@ -83,8 +91,8 @@ export default function Wheel({ prizes, onSpin, onSpinComplete }: WheelProps) {
       const finalRotation = newRotation + randomOffset;
 
       animate(rotateX, finalRotation, {
-        duration: 5,
-        ease: [0.15, 0.85, 0.1, 1], // Custom snappy slow-down curve
+        duration: 15,
+        ease: [0.05, 0.95, 0.05, 1], // Even smoother, slower deceleration at the end
         onComplete: async () => {
           setIsSpinning(false);
           const confettiLib = await import('canvas-confetti');
@@ -95,7 +103,8 @@ export default function Wheel({ prizes, onSpin, onSpinComplete }: WheelProps) {
             origin: { y: 0.6 },
             colors: ['#A91101', '#18181B', '#FFFFFF']
           });
-          setTimeout(() => onSpinComplete(result), 800);
+          // Wait at least 5 seconds before showing the modal
+          setTimeout(() => onSpinComplete(result), 5000);
         }
       });
 
@@ -125,18 +134,15 @@ export default function Wheel({ prizes, onSpin, onSpinComplete }: WheelProps) {
       {/* Container to handle mobile scaling gracefully */}
       <div className="relative w-[300px] h-[300px] sm:w-[350px] sm:h-[350px] md:w-[500px] md:h-[500px]">
 
-        {/* Physics Pointer (Anchored top center) */}
-        <div className="absolute top-[-2%] md:top-[-4%] left-1/2 -translate-x-1/2 z-30 drop-shadow-xl" style={{ transformOrigin: 'top center' }}>
-          <motion.div style={{ rotate: pointerRotate, transformOrigin: 'top center' }} className="flex flex-col items-center">
-            {/* Pointer mount peg */}
-            <div className="w-5 h-5 md:w-8 md:h-8 bg-zinc-200 border-[3px] md:border-4 border-[#9c1404] rounded-lg z-10 shadow-md flex items-center justify-center">
-              <div className="w-2 h-2 md:w-3 md:h-3 bg-zinc-400 rounded-full inset-shadow-sm"></div>
-            </div>
-            {/* Pointer Base */}
-            <div className="w-8 h-8 md:w-12 md:h-12 bg-[#b51401] rounded-sm -mt-3 md:-mt-4 flex flex-col items-center justify-end overflow-hidden pb-1 border-x-2 border-white/20"></div>
-            {/* Pointer Arrow */}
-            <div className="w-0 h-0 border-l-[16px] md:border-l-[24px] border-l-transparent border-r-[16px] md:border-r-[24px] border-r-transparent border-t-[24px] md:border-t-[36px] border-t-[#b51401]"></div>
-          </motion.div>
+        {/* Skater Pin Wrapper aligned to wheel center, rotated -10deg so Skater sits 10deg above the left horizontal axis */}
+        <div className="absolute inset-0 z-30 pointer-events-none" style={{ transform: 'rotate(-10deg)' }}>
+          {/* Skater Pin (Left side horizontal within rotated wrapper) */}
+          <div className="absolute top-1/2 left-[calc(-20%+10px)] md:left-[calc(-25%+10px)] -translate-y-1/2 drop-shadow-xl pointer-events-auto" style={{ transformOrigin: '50% 50%' }}>
+            <motion.div style={{ rotate: pointerRotate, transformOrigin: '50% 50%' }} className="flex items-center">
+              {/* The Skater Image serving as the pointing pin */}
+              <img src="/Soerfi-Needle.png" alt="Skater Pin" className="w-24 md:w-32 object-contain" />
+            </motion.div>
+          </div>
         </div>
 
         {/* Outer Decor Ring */}
@@ -145,36 +151,28 @@ export default function Wheel({ prizes, onSpin, onSpinComplete }: WheelProps) {
           {/* Wheel Graphic */}
           <motion.div
             ref={wheelRef}
-            className="w-[96%] h-[96%] rounded-full overflow-hidden bg-zinc-900 border-[3px] border-[#b51401]"
-            style={{ rotate: useTransform(rotateX, v => v - 90) }} // Offset so 0 degrees is visually Top
+            className="w-[96%] h-[96%] rounded-full overflow-hidden bg-zinc-900 shadow-inner"
+            style={{
+              rotate: useTransform(rotateX, v => v - 90), // Offset so 0 degrees is visually Top
+              backgroundImage: 'url(/Wheel-of-Fortune.svg)',
+              backgroundSize: '100% 100%',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat'
+            }}
           >
             <svg viewBox="0 0 100 100" className="w-full h-full overflow-visible">
+              <defs>
+                <filter id="text-shadow" x="-20%" y="-20%" width="140%" height="140%">
+                  <feDropShadow dx="0.5" dy="0.5" stdDeviation="1" floodColor="#000000" floodOpacity="0.8" />
+                </filter>
+              </defs>
               {prizes.map((prize, i) => {
                 const midAngle = i * sliceAngle + sliceAngle / 2;
-                const textFontSize = Math.max(3, 7 - (numPrizes * 0.15));
-
-                // Styling inspired by references: Auto alternating black and white
-                let isDark = i % 2 === 0;
-                let sliceFill = isDark ? '#18181b' : '#f4f4f5';
-                let textFill = isDark ? '#f4f4f5' : '#a11202';
-
-                // Prevent two adjacent slices of the same color if odd
-                if (numPrizes % 2 !== 0 && i === numPrizes - 1) {
-                  sliceFill = '#a11202';
-                  textFill = '#ffffff';
-                }
 
                 return (
-                  <g key={prize.id}>
-                    {/* Slice Wedge */}
-                    <path
-                      d={createSlicePath(i)}
-                      fill={sliceFill}
-                      stroke="#ffffff"
-                      strokeWidth="0.4"
-                    />
-
+                  <g key={i}>
                     {/* Peg Notches */}
+                    {/* Moved 20px outward compared to before (translate from 46 to 50 for +4 viewBox units) and rotated by 10 degrees to match text alignment */}
                     <line
                       x1="48"
                       y1="50"
@@ -183,20 +181,22 @@ export default function Wheel({ prizes, onSpin, onSpinComplete }: WheelProps) {
                       stroke="#ffffff"
                       strokeWidth="1.5"
                       strokeLinecap="round"
-                      transform={`rotate(${i * sliceAngle}, 50, 50) translate(49, 0)`}
+                      transform={`rotate(${i * sliceAngle + 10}, 50, 50) translate(50, 0)`}
                     />
 
                     {/* Text placement */}
                     <text
-                      x="64"
+                      x="6"
                       y="51.5"
-                      fill={textFill}
+                      fill="#ffffff"
+                      filter="url(#text-shadow)"
                       stroke="none"
-                      fontSize={textFontSize}
-                      fontFamily="'Anton', sans-serif"
-                      letterSpacing="0.06em"
+                      fontSize={3.2}
+                      fontFamily="system-ui, -apple-system, sans-serif"
+                      fontWeight="600"
+                      letterSpacing="0.05em"
                       textAnchor="start"
-                      transform={`rotate(${midAngle}, 50, 50)`}
+                      transform={`rotate(${midAngle + 10 - 180}, 50, 50)`}
                     >
                       {prize.name.length > (numPrizes > 12 ? 10 : 18)
                         ? prize.name.substring(0, numPrizes > 12 ? 10 : 18) + '..'
@@ -205,15 +205,6 @@ export default function Wheel({ prizes, onSpin, onSpinComplete }: WheelProps) {
                   </g>
                 );
               })}
-
-              {/* Center Circle Hub */}
-              <circle cx="50" cy="50" r="30" fill="#f4f4f5" />
-              <circle cx="50" cy="50" r="30" fill="none" stroke="#a11202" strokeWidth="0.75" />
-
-              {/* Graphic Logo Text inside Hub */}
-              <text x="50" y="44" fill="#a11202" fontSize="5" fontFamily="sans-serif" fontWeight="900" fontStyle="italic" textAnchor="middle" letterSpacing="0.05em">10 YEARS</text>
-              <text x="50" y="55" fill="#a11202" fontSize="13" fontFamily="'Anton', sans-serif" textAnchor="middle" letterSpacing="0.05em">SKATE.CH</text>
-              <text x="50" y="63" fill="#a11202" fontSize="4.5" fontFamily="sans-serif" fontWeight="700" textAnchor="middle" letterSpacing="0.05em">WHEEL OF FORTUNE</text>
             </svg>
           </motion.div>
         </div>

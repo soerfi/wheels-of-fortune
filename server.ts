@@ -161,13 +161,13 @@ async function startServer() {
   };
 
   app.post('/api/prizes', checkAdminAuth, (req, res) => {
-    const { name, color, description, quantity, prefix, custom_codes, value, weight } = req.body;
+    const { name, color, description, quantity, prefix, custom_codes, value, weight, is_jackpot } = req.body;
 
     let insertId;
     try {
       db.transaction(() => {
         // 1. Insert Prize
-        const result = db.prepare('INSERT INTO prizes (name, color, description, value, weight) VALUES (?, ?, ?, ?, ?)').run(name, color || '#EF4444', description || '', value || '', weight || 1);
+        const result = db.prepare('INSERT INTO prizes (name, color, description, value, weight, is_jackpot) VALUES (?, ?, ?, ?, ?, ?)').run(name, color || '#EF4444', description || '', value || '', weight || 1, is_jackpot ? 1 : 0);
         insertId = result.lastInsertRowid;
 
         // 2. Insert custom codes if provided
@@ -189,13 +189,13 @@ async function startServer() {
   });
 
   app.put('/api/prizes/:id', checkAdminAuth, (req, res) => {
-    const { name, color, description, add_quantity, prefix, custom_codes, value, weight } = req.body;
+    const { name, color, description, add_quantity, prefix, custom_codes, value, weight, is_jackpot } = req.body;
     const prizeId = req.params.id;
 
     try {
       db.transaction(() => {
         // 1. Update Prize name, color & desc
-        db.prepare('UPDATE prizes SET name = ?, color = ?, description = ?, value = ?, weight = ? WHERE id = ?').run(name, color || '#EF4444', description || '', value || '', weight || 1, prizeId);
+        db.prepare('UPDATE prizes SET name = ?, color = ?, description = ?, value = ?, weight = ?, is_jackpot = ? WHERE id = ?').run(name, color || '#EF4444', description || '', value || '', weight || 1, is_jackpot ? 1 : 0, prizeId);
 
         // 2. Add custom codes if provided
         if (custom_codes && Array.isArray(custom_codes) && custom_codes.length > 0) {
@@ -245,13 +245,13 @@ async function startServer() {
           if (prizeRow) {
             prizeId = prizeRow.id;
             // Optionally update color and description if provided
-            if (p.color || p.description || p.value !== undefined || p.weight !== undefined) {
-              db.prepare('UPDATE prizes SET color = coalesce(?, color), description = coalesce(?, description), value = coalesce(?, value), weight = coalesce(?, weight) WHERE id = ?')
-                .run(p.color || null, p.description || null, p.value || null, p.weight || null, prizeId);
+            if (p.color || p.description || p.value !== undefined || p.weight !== undefined || p.is_jackpot !== undefined) {
+              db.prepare('UPDATE prizes SET color = coalesce(?, color), description = coalesce(?, description), value = coalesce(?, value), weight = coalesce(?, weight), is_jackpot = coalesce(?, is_jackpot) WHERE id = ?')
+                .run(p.color || null, p.description || null, p.value || null, p.weight || null, p.is_jackpot !== undefined ? (p.is_jackpot ? 1 : 0) : null, prizeId);
             }
           } else {
-            const insertResult = db.prepare('INSERT INTO prizes (name, color, description, value, weight) VALUES (?, ?, ?, ?, ?)')
-              .run(p.name, p.color || '#EF4444', p.description || '', p.value || '', p.weight || 1);
+            const insertResult = db.prepare('INSERT INTO prizes (name, color, description, value, weight, is_jackpot) VALUES (?, ?, ?, ?, ?, ?)')
+              .run(p.name, p.color || '#EF4444', p.description || '', p.value || '', p.weight || 1, p.is_jackpot ? 1 : 0);
             prizeId = insertResult.lastInsertRowid;
           }
 

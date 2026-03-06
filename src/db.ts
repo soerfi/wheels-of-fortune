@@ -24,7 +24,8 @@ db.exec(`
     color TEXT NOT NULL,
     description TEXT DEFAULT "",
     value TEXT DEFAULT "",
-    weight INTEGER DEFAULT 1
+    weight INTEGER DEFAULT 1,
+    is_jackpot INTEGER DEFAULT 0
   );
 
   CREATE TABLE IF NOT EXISTS prize_codes (
@@ -80,6 +81,12 @@ try {
 
 try {
   db.exec('ALTER TABLE prize_codes ADD COLUMN value TEXT;');
+} catch (e) {
+  // Column might already exist, ignore error
+}
+
+try {
+  db.exec('ALTER TABLE prizes ADD COLUMN is_jackpot INTEGER DEFAULT 0;');
 } catch (e) {
   // Column might already exist, ignore error
 }

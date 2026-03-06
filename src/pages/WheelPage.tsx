@@ -35,24 +35,40 @@ export default function WheelPage() {
       setPrizes(available);
 
       if (available.length > 0) {
-        // Generate 18 Wheel Slots
         const sorted = [...available].sort((a, b) => (a.weight || 1) - (b.weight || 1));
-        const slots = [];
         const TOTAL_SLOTS = 18;
 
-        for (let i = 0; i < sorted.length - 1; i++) {
-          slots.push(sorted[i]);
+        // Find if there is a jackpot prize among available prizes
+        const jackpotPrize = sorted.find(p => p.is_jackpot);
+        // All others
+        const regularPrizes = sorted.filter(p => !p.is_jackpot);
+
+        // If there are no regular prizes, just use the jackpot or whatever we have
+        const poolToUse = regularPrizes.length > 0 ? regularPrizes : sorted;
+
+        const slots: any[] = [];
+
+        // Fill slots with available distinct prizes
+        for (let i = 0; i < poolToUse.length && slots.length < TOTAL_SLOTS; i++) {
+          slots.push(poolToUse[i]);
         }
 
-        const trostPrize = sorted[sorted.length - 1];
+        // Fill remaining slots with the highest probability prize (usually Trostpreis)
+        const trostPrize = poolToUse[poolToUse.length - 1];
         while (slots.length < TOTAL_SLOTS) {
           slots.push(trostPrize);
         }
 
-        // Randomly shuffle to spread out the Trostpreise
+        // Randomly shuffle to spread out the Trostpreise (excluding jackpot, which isn't in this list yet)
         for (let i = slots.length - 1; i > 0; i--) {
           const j = Math.floor(Math.random() * (i + 1));
           [slots[i], slots[j]] = [slots[j], slots[i]];
+        }
+
+        // If we have a jackpot prize, force it into the Golden Slice position
+        // The golden slice is index 2 (40-60 degrees from top)
+        if (jackpotPrize) {
+          slots[2] = jackpotPrize;
         }
 
         setWheelPrizes(slots.slice(0, TOTAL_SLOTS));
