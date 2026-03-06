@@ -74,10 +74,10 @@ export default function Wheel({ prizes, onSpin, onSpinComplete }: WheelProps) {
       // Pick a random slot among the matches
       const winningIndex = matchingIndices[Math.floor(Math.random() * matchingIndices.length)];
 
-      // Skater is rotated -10deg from the horizontal left, meaning Skater sits at angle 260.
-      // Text sits at (winningIndex * 20) + 10. We want the winning text to land exactly at 260.
+      // Skater is located at -left-[4%], which is perfectly horizontally left, so 270 degrees.
+      // Text sits at (winningIndex * 20) + 10. We want the winning text to land exactly at 270.
       const currentRotation = rotateX.get();
-      const targetAngle = 260 - (winningIndex * sliceAngle + sliceAngle / 2);
+      const targetAngle = 270 - (winningIndex * sliceAngle + sliceAngle / 2);
 
       // Decreased extra spins to 8 so the wheel moves convincingly but slower over 15 seconds
       const extraSpins = 8 * 360;
