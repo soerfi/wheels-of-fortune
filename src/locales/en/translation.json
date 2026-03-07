@@ -1,0 +1,28 @@
+{
+    "wheel": {
+        "try_your_luck": "Try your luck",
+        "spin_now": "SPIN NOW!",
+        "you_won": "You won!",
+        "paused": "Action paused",
+        "paused_desc": "The wheel is currently paused. The next round starts soon!",
+        "no_sessions": "The wheel has no active sessions planned.",
+        "already_spun": "Already spun!",
+        "already_spun_desc": "You have already tried your luck. Come back next round!",
+        "all_gone": "All gone!",
+        "all_gone_desc": "All prizes have already been won. Stay tuned for the next round!"
+    },
+    "modal": {
+        "title": "WOOHOO! YOU WON!",
+        "desc_1": "You got the following prize:",
+        "desc_2": "Enter your details to receive the personalized voucher code instantly via email.",
+        "first_name": "First Name",
+        "last_name": "Last Name",
+        "email": "Email Address",
+        "newsletter": "I agree to receive a newsletter from time to time",
+        "submit": "Send Voucher Now",
+        "submitting": "Processing...",
+        "success_title": "CHECK YOUR INBOX!",
+        "success_desc": "Your voucher code is on its way. Have fun with your prize!",
+        "error_general": "An error occurred. Please try again."
+    }
+}

@@ -28,27 +28,31 @@ Das Projekt zeichnet sich durch ein **Single-Spin System** (1 Dreh pro Browser v
 ## 🗄 Datenbank Schema (`skate_wheel.db`)
 Das Projekt nutzt eine leichtgewichtige SQLite-Datenbank (`WAL` Mode aktiv für Concurrency).
 1. **`settings`**: Steuert die globalen Zeitfenster (JSON Field `active_slots` als `[{from, to}]`) und das Voucher-Hintergrundbild.
-2. **`prizes`**: Die verfügbaren Preise auf dem Rad (`id`, `name`, `color` (legacy), `description`, `value`, `weight`, `is_jackpot`). `value` ist der ausgeschriebene Wert (z.B. "CHF 50.-") und `weight` steuert die Gewinnwahrscheinlichkeit (1 = selten, 100 = häufig). Das Flag `is_jackpot` bestimmt, ob ein Preis fix auf dem speziellen Goldenen Segment platziert werden soll.
+2. **`prizes`**: Die verfügbaren Preise auf dem Rad. 
+   - Felder: `id`, `name`, `description`, `mail_description`, `mail_instruction`, `min_order_value`, `value`, `weight`, `is_jackpot`.
+   - **Multi-Language Support**: Die Textfelder existieren dynamisch in 4 Sprachen (`_en`, `_fr`, `_it`). Beispiel: `description_en` oder `min_order_value_fr`. Fallback ist immer der leere String oder Deutsch (das originale Feld ohne Suffix).
 3. **`prize_codes`**: Die via CSV importierten, realen ERP-Codes. Mapping erfolgt über `prize_id`. Beinhaltet den spezifischen `Wert` und einen `is_used` Boolean.
-4. **`winners`**: Loggt jeden Gewinner (`prize_id, code, won_at, user_name, user_email`).
+4. **`winners`**: Loggt jeden Gewinner (`prize_id, code, won_at, user_name, user_email, first_name`). Speichert seit neustem auch die Browser-Präferenz `language` (z.B. 'de', 'en') für den Mailversand.
 
 ---
 
 ## ⚙️ Wie funktioniert der Code-Flow?
 1. **CSV Import (Admin):**
-   * Die CSV MUSS folgendes Format/Header haben: `Name`, `Beschreibung`, `Wert`, `Gewichtung`, `Code`.
+   * Die CSV MUSS via "Muster herunterladen" generiert oder strikt nach den `Name (DE)`, `Name EN`, `Beschreibung EN`, `Mindestbestellwert (DE)` etc. Headern formatiert sein.
    * Trennzeichen ist auf **Europäisches Excel Format (Semikolon `;`)** eingestellt.
-   * Das Backend übersetzt die Header in `prizes` (wenn neu) und befüllt `prize_codes` mit den Codes. Bereits bekannte Codes werden via `INSERT OR IGNORE` übersprungen.
+   * Das Backend übersetzt die Header in die multilingualen `prizes` (wenn neu) und befüllt `prize_codes` mit den Codes. Bereits bekannte Codes werden via `INSERT OR IGNORE` übersprungen.
 2. **Der Spin (User) - Weighted Random & Atomare Sicherheit:**
    * POST `/api/spin` checkt serverseitig: Ist die aktuelle Zeit in einem der `active_slots`?
    * Sammelt alle `prizes`, die noch **unbenutzte Codes** (`is_used = 0`) haben. Hat ein Preis 0 Codes, verschwindet er komplett aus dem Array (Nieten-Schutz & Verhindert Double-Spending von ausverkauften Preisen).
    * **Weighted Random Calculation:** Anstatt einer exakten `1 / n` Chance, berechnet der Server das Total aller Gewichte der `verfügbaren` Preise. Eine Zufallszahl entscheidet auf Basis dieses Gesamtgewichts den Gewinner. Der sicher zugewiesene Code wird sofort per `is_used = 1` in einer SQL-Transaction blockiert!
-   * **18-Slice Wheel Mapping & Jackpot Logic:** Das React-Frontend nutzt das Backend-Datenarray, um **immer exakt 18 physikalische Rad-Sektoren** zu rendern, basierend auf einer SVG-Grafik (`Wheel-of-Fortune.svg`). Der wertvollste Preis (bzw. der mit `is_jackpot=1`) belegt starr den Index 2 (ein goldenes optisches Segment). Die restlichen Slots werden basierend auf den anderen Preisen und Trostpreisen aufgefüllt und anschliessend geshufflet.
-   * **Physik:** Das Rad dreht sich mit einer langsamen, kinematik-basierten Physik ca. 15 Sekunden. Der Pointer (ein Skater-Bild) hebt und senkt sich basierend auf den visualisierten Pins des Rads.
+   * **18-Slice Wheel Mapping & Jackpot Logic:** Das React-Frontend nutzt das Backend-Datenarray, um **immer exakt 18 physikalische Rad-Sektoren** zu rendern, basierend auf einer SVG-Grafik (`Wheel-of-Fortune.svg`). Der wertvollste Preis (bzw. der mit `is_jackpot=1`) belegt starr den Index 2 (ein goldenes optisches Segment).
+   * **Multi-Language Rendering:** Frontend ließt die `navigator.language` aus und versucht dynamisch das passende Suffix (z.B. `name_en`) darzustellen.
+   * **Physik:** Das Rad dreht sich mit einer langsamen, kinematik-basierten Physik ca. 15 Sekunden.
    * **Sicherheit:** Der echte gewonnene Code String wird dem Frontend *nicht* zusammen mit dem Spin-Resultat zurückgegeben, sondern bleibt verdeckt, bis das E-Mail-Formular abgesendet ist!
 3. **Lead & Versand:**
-   * User gibt im `VoucherModal` Name + E-Mail ein (Erscheint nach 5 Sek. Stillstand des Rads).
-   * PUT `/api/winners/:id` speichert die Kontaktdaten und triggert den Resend-Block. Die E-Mail zieht sich aus `winners`, `prizes` und `prize_codes` alle benötigten Bausteine (`prize_name`, `prize_value`, `code`).
+   * User gibt im `VoucherModal` Name, Vorname, E-Mail und Checkbox-Consent ein (Erscheint nach 5 Sek. Stillstand des Rads).
+   * PUT `/api/winners/:id` speichert die Kontaktdaten und triggert den Resend-Block. 
+   * Die E-Mail zieht sich aus `winners` die bevorzugte Sprache (z.B. 'fr') und pickt dynamisch die passenden Textelemente (`mail_instruction_fr`, `min_order_value_fr` etc.) für das E-Mail Template zusammen.
 
 ---
 

@@ -21,8 +21,22 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS prizes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
+    name_en TEXT DEFAULT "",
+    name_fr TEXT DEFAULT "",
+    name_it TEXT DEFAULT "",
     color TEXT NOT NULL,
     description TEXT DEFAULT "",
+    description_en TEXT DEFAULT "",
+    description_fr TEXT DEFAULT "",
+    description_it TEXT DEFAULT "",
+    mail_description TEXT DEFAULT "",
+    mail_description_en TEXT DEFAULT "",
+    mail_description_fr TEXT DEFAULT "",
+    mail_description_it TEXT DEFAULT "",
+    mail_instruction TEXT DEFAULT "",
+    mail_instruction_en TEXT DEFAULT "",
+    mail_instruction_fr TEXT DEFAULT "",
+    mail_instruction_it TEXT DEFAULT "",
     value TEXT DEFAULT "",
     weight INTEGER DEFAULT 1,
     is_jackpot INTEGER DEFAULT 0
@@ -43,8 +57,12 @@ db.exec(`
     code TEXT NOT NULL,
     won_at TEXT NOT NULL,
     user_name TEXT,
+    first_name TEXT,
+    last_name TEXT,
+    newsletter INTEGER DEFAULT 0,
     user_email TEXT,
     email_sent INTEGER DEFAULT 0,
+    language TEXT DEFAULT "de",
     FOREIGN KEY(prize_id) REFERENCES prizes(id) ON DELETE SET NULL
   );
 `);
@@ -90,6 +108,37 @@ try {
 } catch (e) {
   // Column might already exist, ignore error
 }
+
+try {
+  db.exec('ALTER TABLE prizes ADD COLUMN mail_description TEXT DEFAULT "";');
+  db.exec('ALTER TABLE prizes ADD COLUMN mail_instruction TEXT DEFAULT "";');
+} catch (e) { }
+
+try {
+  db.exec('ALTER TABLE winners ADD COLUMN first_name TEXT;');
+  db.exec('ALTER TABLE winners ADD COLUMN last_name TEXT;');
+  db.exec('ALTER TABLE winners ADD COLUMN newsletter INTEGER DEFAULT 0;');
+} catch (e) { }
+
+try {
+  db.exec('ALTER TABLE prizes ADD COLUMN name_en TEXT DEFAULT "";');
+  db.exec('ALTER TABLE prizes ADD COLUMN name_fr TEXT DEFAULT "";');
+  db.exec('ALTER TABLE prizes ADD COLUMN name_it TEXT DEFAULT "";');
+
+  db.exec('ALTER TABLE prizes ADD COLUMN description_en TEXT DEFAULT "";');
+  db.exec('ALTER TABLE prizes ADD COLUMN description_fr TEXT DEFAULT "";');
+  db.exec('ALTER TABLE prizes ADD COLUMN description_it TEXT DEFAULT "";');
+
+  db.exec('ALTER TABLE prizes ADD COLUMN mail_description_en TEXT DEFAULT "";');
+  db.exec('ALTER TABLE prizes ADD COLUMN mail_description_fr TEXT DEFAULT "";');
+  db.exec('ALTER TABLE prizes ADD COLUMN mail_description_it TEXT DEFAULT "";');
+
+  db.exec('ALTER TABLE prizes ADD COLUMN mail_instruction_en TEXT DEFAULT "";');
+  db.exec('ALTER TABLE prizes ADD COLUMN mail_instruction_fr TEXT DEFAULT "";');
+  db.exec('ALTER TABLE prizes ADD COLUMN mail_instruction_it TEXT DEFAULT "";');
+
+  db.exec('ALTER TABLE winners ADD COLUMN language TEXT DEFAULT "de";');
+} catch (e) { }
 
 // Generate some dummy codes for the default prizes if prize_codes is empty
 const codesCount = db.prepare('SELECT COUNT(*) as count FROM prize_codes').get() as { count: number };

@@ -163,13 +163,37 @@ async function startServer() {
   };
 
   app.post('/api/prizes', checkAdminAuth, (req, res) => {
-    const { name, color, description, quantity, prefix, custom_codes, value, weight, is_jackpot } = req.body;
+    const {
+      name, name_en, name_fr, name_it,
+      color,
+      description, description_en, description_fr, description_it,
+      mail_description, mail_description_en, mail_description_fr, mail_description_it,
+      mail_instruction, mail_instruction_en, mail_instruction_fr, mail_instruction_it,
+      min_order_value, min_order_value_en, min_order_value_fr, min_order_value_it,
+      quantity, prefix, custom_codes, value, weight, is_jackpot
+    } = req.body;
 
     let insertId;
     try {
       db.transaction(() => {
         // 1. Insert Prize
-        const result = db.prepare('INSERT INTO prizes (name, color, description, value, weight, is_jackpot) VALUES (?, ?, ?, ?, ?, ?)').run(name, color || '#EF4444', description || '', value || '', weight || 1, is_jackpot ? 1 : 0);
+        const result = db.prepare(`INSERT INTO prizes (
+          name, name_en, name_fr, name_it, 
+          color, 
+          description, description_en, description_fr, description_it, 
+          mail_description, mail_description_en, mail_description_fr, mail_description_it, 
+          mail_instruction, mail_instruction_en, mail_instruction_fr, mail_instruction_it, 
+          min_order_value, min_order_value_en, min_order_value_fr, min_order_value_it,
+          value, weight, is_jackpot
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+          name, name_en || '', name_fr || '', name_it || '',
+          color || '#EF4444',
+          description || '', description_en || '', description_fr || '', description_it || '',
+          mail_description || '', mail_description_en || '', mail_description_fr || '', mail_description_it || '',
+          mail_instruction || '', mail_instruction_en || '', mail_instruction_fr || '', mail_instruction_it || '',
+          min_order_value || '', min_order_value_en || '', min_order_value_fr || '', min_order_value_it || '',
+          value || '', weight || 1, is_jackpot ? 1 : 0
+        );
         insertId = result.lastInsertRowid;
 
         // 2. Insert custom codes if provided
@@ -191,13 +215,37 @@ async function startServer() {
   });
 
   app.put('/api/prizes/:id', checkAdminAuth, (req, res) => {
-    const { name, color, description, add_quantity, prefix, custom_codes, value, weight, is_jackpot } = req.body;
+    const {
+      name, name_en, name_fr, name_it,
+      color,
+      description, description_en, description_fr, description_it,
+      mail_description, mail_description_en, mail_description_fr, mail_description_it,
+      mail_instruction, mail_instruction_en, mail_instruction_fr, mail_instruction_it,
+      min_order_value, min_order_value_en, min_order_value_fr, min_order_value_it,
+      add_quantity, prefix, custom_codes, value, weight, is_jackpot
+    } = req.body;
     const prizeId = req.params.id;
 
     try {
       db.transaction(() => {
         // 1. Update Prize name, color & desc
-        db.prepare('UPDATE prizes SET name = ?, color = ?, description = ?, value = ?, weight = ?, is_jackpot = ? WHERE id = ?').run(name, color || '#EF4444', description || '', value || '', weight || 1, is_jackpot ? 1 : 0, prizeId);
+        db.prepare(`UPDATE prizes SET 
+          name = ?, name_en = ?, name_fr = ?, name_it = ?, 
+          color = ?, 
+          description = ?, description_en = ?, description_fr = ?, description_it = ?, 
+          mail_description = ?, mail_description_en = ?, mail_description_fr = ?, mail_description_it = ?, 
+          mail_instruction = ?, mail_instruction_en = ?, mail_instruction_fr = ?, mail_instruction_it = ?, 
+          min_order_value = ?, min_order_value_en = ?, min_order_value_fr = ?, min_order_value_it = ?,
+          value = ?, weight = ?, is_jackpot = ? 
+          WHERE id = ?`).run(
+          name, name_en || '', name_fr || '', name_it || '',
+          color || '#EF4444',
+          description || '', description_en || '', description_fr || '', description_it || '',
+          mail_description || '', mail_description_en || '', mail_description_fr || '', mail_description_it || '',
+          mail_instruction || '', mail_instruction_en || '', mail_instruction_fr || '', mail_instruction_it || '',
+          min_order_value || '', min_order_value_en || '', min_order_value_fr || '', min_order_value_it || '',
+          value || '', weight || 1, is_jackpot ? 1 : 0, prizeId
+        );
 
         // 2. Add custom codes if provided
         if (custom_codes && Array.isArray(custom_codes) && custom_codes.length > 0) {
@@ -247,13 +295,50 @@ async function startServer() {
           if (prizeRow) {
             prizeId = prizeRow.id;
             // Optionally update color and description if provided
-            if (p.color || p.description || p.value !== undefined || p.weight !== undefined || p.is_jackpot !== undefined) {
-              db.prepare('UPDATE prizes SET color = coalesce(?, color), description = coalesce(?, description), value = coalesce(?, value), weight = coalesce(?, weight), is_jackpot = coalesce(?, is_jackpot) WHERE id = ?')
-                .run(p.color || null, p.description || null, p.value || null, p.weight || null, p.is_jackpot !== undefined ? (p.is_jackpot ? 1 : 0) : null, prizeId);
+            if (
+              p.color || p.description || p.description_en !== undefined || p.description_fr !== undefined || p.description_it !== undefined ||
+              p.mail_description !== undefined || p.mail_description_en !== undefined || p.mail_description_fr !== undefined || p.mail_description_it !== undefined ||
+              p.mail_instruction !== undefined || p.mail_instruction_en !== undefined || p.mail_instruction_fr !== undefined || p.mail_instruction_it !== undefined ||
+              p.name_en !== undefined || p.name_fr !== undefined || p.name_it !== undefined ||
+              p.value !== undefined || p.weight !== undefined || p.is_jackpot !== undefined
+            ) {
+              db.prepare(`UPDATE prizes SET 
+                name_en = coalesce(?, name_en), name_fr = coalesce(?, name_fr), name_it = coalesce(?, name_it),
+                color = coalesce(?, color), 
+                description = coalesce(?, description), description_en = coalesce(?, description_en), description_fr = coalesce(?, description_fr), description_it = coalesce(?, description_it),
+                mail_description = coalesce(?, mail_description), mail_description_en = coalesce(?, mail_description_en), mail_description_fr = coalesce(?, mail_description_fr), mail_description_it = coalesce(?, mail_description_it),
+                mail_instruction = coalesce(?, mail_instruction), mail_instruction_en = coalesce(?, mail_instruction_en), mail_instruction_fr = coalesce(?, mail_instruction_fr), mail_instruction_it = coalesce(?, mail_instruction_it),
+                min_order_value = coalesce(?, min_order_value), min_order_value_en = coalesce(?, min_order_value_en), min_order_value_fr = coalesce(?, min_order_value_fr), min_order_value_it = coalesce(?, min_order_value_it),
+                value = coalesce(?, value), weight = coalesce(?, weight), is_jackpot = coalesce(?, is_jackpot) WHERE id = ?`)
+                .run(
+                  p.name_en || null, p.name_fr || null, p.name_it || null,
+                  p.color || null,
+                  p.description || null, p.description_en || null, p.description_fr || null, p.description_it || null,
+                  p.mail_description || null, p.mail_description_en || null, p.mail_description_fr || null, p.mail_description_it || null,
+                  p.mail_instruction || null, p.mail_instruction_en || null, p.mail_instruction_fr || null, p.mail_instruction_it || null,
+                  p.min_order_value || null, p.min_order_value_en || null, p.min_order_value_fr || null, p.min_order_value_it || null,
+                  p.value || null, p.weight || null, p.is_jackpot !== undefined ? (p.is_jackpot ? 1 : 0) : null, prizeId
+                );
             }
           } else {
-            const insertResult = db.prepare('INSERT INTO prizes (name, color, description, value, weight, is_jackpot) VALUES (?, ?, ?, ?, ?, ?)')
-              .run(p.name, p.color || '#EF4444', p.description || '', p.value || '', p.weight || 1, p.is_jackpot ? 1 : 0);
+            const insertResult = db.prepare(`INSERT INTO prizes (
+              name, name_en, name_fr, name_it,
+              color, 
+              description, description_en, description_fr, description_it,
+              mail_description, mail_description_en, mail_description_fr, mail_description_it,
+              mail_instruction, mail_instruction_en, mail_instruction_fr, mail_instruction_it,
+              min_order_value, min_order_value_en, min_order_value_fr, min_order_value_it,
+              value, weight, is_jackpot
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+              .run(
+                p.name, p.name_en || '', p.name_fr || '', p.name_it || '',
+                p.color || '#EF4444',
+                p.description || '', p.description_en || '', p.description_fr || '', p.description_it || '',
+                p.mail_description || '', p.mail_description_en || '', p.mail_description_fr || '', p.mail_description_it || '',
+                p.mail_instruction || '', p.mail_instruction_en || '', p.mail_instruction_fr || '', p.mail_instruction_it || '',
+                p.min_order_value || '', p.min_order_value_en || '', p.min_order_value_fr || '', p.min_order_value_it || '',
+                p.value || '', p.weight || 1, p.is_jackpot ? 1 : 0
+              );
             prizeId = insertResult.lastInsertRowid;
           }
 
@@ -348,16 +433,18 @@ async function startServer() {
   });
 
   app.put('/api/winners/:id', async (req, res) => {
-    const { user_name, user_email } = req.body;
-    db.prepare('UPDATE winners SET user_name = ?, user_email = ? WHERE id = ?')
-      .run(user_name, user_email, req.params.id);
+    const { first_name, last_name, newsletter, user_email, language } = req.body;
+    const user_name = `${first_name} ${last_name}`.trim();
+    const userLang = language || 'de';
+    db.prepare('UPDATE winners SET user_name = ?, first_name = ?, last_name = ?, newsletter = ?, user_email = ?, language = ? WHERE id = ?')
+      .run(user_name, first_name || '', last_name || '', newsletter ? 1 : 0, user_email, userLang, req.params.id);
 
     // Attempt to send email
     const resend = getResend();
     if (resend && user_email) {
       try {
         const winner = db.prepare(`
-          SELECT w.*, p.name as prize_name, p.description as prize_description, pc.value as prize_value 
+          SELECT w.*, p.*, pc.value as prize_value 
           FROM winners w 
           LEFT JOIN prizes p ON w.prize_id = p.id 
           LEFT JOIN prize_codes pc ON w.code = pc.code
@@ -369,25 +456,101 @@ async function startServer() {
           const appUrl = process.env.VITE_APP_URL || 'https://winner.skate.ch';
           const backgroundUrl = `${appUrl}/Mail-Background.jpg`;
 
+          // Translations mapping based on language
+          const l = userLang === 'en' || userLang === 'fr' || userLang === 'it' ? `_${userLang}` : '';
+
+          const translatedName = winner[`name${l}`] || winner.name;
+          const translatedDesc = winner[`description${l}`] || winner.description;
+          const translatedMailDesc = winner[`mail_description${l}`] || winner[`mail_description`] || translatedDesc;
+          const translatedMailInst = winner[`mail_instruction${l}`] || winner[`mail_instruction`];
+          const translatedMinOrder = winner[`min_order_value${l}`] || winner[`min_order_value`];
+
+          // Default subjects based on language
+          const subjects: any = {
+            en: 'Your SKATE.CH 10th Anniversary Prize!',
+            fr: 'Votre prix pour le 10e anniversaire de SKATE.CH !',
+            it: 'Il tuo premio per il 10° anniversario di SKATE.CH!',
+            de: 'Dein SKATE.CH Gewinn zum 10-jährigen Jubiläum!',
+          };
+
+          const subject = subjects[userLang] || subjects['de'];
+          const thankYouText: any = {
+            en: 'Thank you for participating!',
+            fr: 'Merci d\'avoir participé !',
+            it: 'Grazie per aver partecipato!',
+            de: 'Vielen Dank für deine Teilnahme am Gewinnspiel!'
+          };
+
+          const heyText: any = {
+            en: 'Hey', fr: 'Salut', it: 'Ciao', de: 'Hey'
+          };
+
+          const introText: any = {
+            en: 'We are thrilled – you spun our Wheel of Fortune and won big! Here is your prize:',
+            fr: 'Nous sommes ravis - vous avez fait tourner notre Roue de la Fortune et raflé la mise ! Voici votre prix:',
+            it: 'Siamo entusiasti: hai girato la nostra Ruota della Fortuna e hai vinto alla grande! Ecco il tuo premio:',
+            de: 'Wir freuen uns sehr – du hast an unserem Wheel of Fortune gedreht und kräftig abgeräumt! Hier ist dein Gewinn:'
+          };
+
+          const voucherText: any = {
+            en: 'Your Voucher', fr: 'Votre bon', it: 'Il tuo buono', de: 'Dein Gutschein'
+          };
+
+          const codeText: any = {
+            en: 'Voucher Code', fr: 'Code du bon', it: 'Codice del buono', de: 'Gutscheincode'
+          };
+
+          const defaultMailDesc: any = {
+            en: 'Redeemable on your next purchase',
+            fr: 'Réutilisable lors de votre prochain achat',
+            it: 'Riscattabile al tuo prossimo acquisto',
+            de: 'Einlösbar bei deinem nächsten Einkauf'
+          };
+
+          const validUntil: any = {
+            en: 'Valid until April 30, 2026',
+            fr: 'Valable jusqu\'au 30 avril 2026',
+            it: 'Valido fino al 30 aprile 2026',
+            de: 'Gültig bis 30. April 2026'
+          };
+
+          const defaultMailInst: any = {
+            en: 'Simply visit our webshop and enter your voucher code directly at checkout.',
+            fr: 'Visitez simplement notre boutique en ligne et entrez votre code de bon directement à la caisse.',
+            it: 'Visita il nostro negozio online e inserisci il codice del tuo buono direttamente alla cassa.',
+            de: 'Besuche einfach unseren Webshop und gib deinen Gutscheincode direkt am Ende des Bestellvorgangs ein.'
+          };
+
+          const finalGreeting: any = {
+            en: 'We look forward to seeing you!<br>Keep Rolling.',
+            fr: 'Nous avons hâte de vous voir !<br>Keep Rolling.',
+            it: 'Non vediamo l\'ora di vederti!<br>Keep Rolling.',
+            de: 'Wir freuen uns auf dich!<br>Keep Rolling.'
+          };
+
+          const buttonText: any = {
+            en: 'Redeem online now', fr: 'Échanger en ligne', it: 'Riscatta online', de: 'Jetzt online einlösen'
+          };
+
           await resend.emails.send({
             from: process.env.FROM_EMAIL || 'gewinn@winner.skate.ch',
             to: user_email,
-            subject: 'Dein SKATE.CH Gewinn zum 10-jährigen Jubiläum!',
+            subject: subject,
             html: `
               <div style="background-color: #f4f4f5; padding: 40px 0;">
                 <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
                   <tr>
                     <td align="center" style="padding: 30px 20px 20px 20px; text-align: center;">
                       <h1 style="color: #EF4444; font-size: 28px; font-weight: 900; letter-spacing: 2px; margin: 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">10 JAHRE SKATE.CH</h1>
-                      <p style="color: #71717a; font-size: 16px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; margin-top: 10px;">Vielen Dank für deine Teilnahme am Gewinnspiel!</p>
+                      <p style="color: #71717a; font-size: 16px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; margin-top: 10px;">${thankYouText[userLang] || thankYouText['de']}</p>
                     </td>
                   </tr>
                   
                   <tr>
                     <td style="padding: 10px 40px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 16px; line-height: 1.6; color: #3f3f46;">
-                      Hey <strong>${user_name}</strong>,<br><br>
-                      Wir freuen uns sehr – du hast an unserem Wheel of Fortune gedreht und kräftig abgeräumt! Hier ist dein Gewinn:<br>
-                      <strong style="color: #EF4444; font-size: 18px;">${winner.prize_name}</strong>
+                      ${heyText[userLang] || heyText['de']} <strong>${winner.first_name || winner.user_name}</strong>,<br><br>
+                      ${introText[userLang] || introText['de']}<br>
+                      <strong style="color: #EF4444; font-size: 18px;">${translatedName}</strong>
                     </td>
                   </tr>
                   
@@ -398,21 +561,22 @@ async function startServer() {
                         <tr>
                           <!-- Added dark fallback overlay for text readability -->
                           <td style="background: rgba(0,0,0,0.65); border-radius: 9px; padding: 40px 30px; text-align: left;">
-                            <p style="color: #EF4444; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-weight: bold; font-size: 14px; letter-spacing: 2px; margin: 0; text-transform: uppercase;">Dein Gutschein</p>
+                            <p style="color: #EF4444; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-weight: bold; font-size: 14px; letter-spacing: 2px; margin: 0; text-transform: uppercase;">${voucherText[userLang] || voucherText['de']}</p>
                             
-                            <h2 style="color: #ffffff; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 34px; font-weight: 900; margin: 8px 0 10px 0;">${winner.prize_value ? winner.prize_value : winner.prize_name}</h2>
-                            <p style="color: #d4d4d8; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 16px; margin: 0 0 35px 0; font-style: italic;">${winner.prize_description || 'Einlösbar bei deinem nächsten Einkauf'}</p>
+                            <h2 style="color: #ffffff; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 34px; font-weight: 900; margin: 8px 0 10px 0;">${winner.value || winner.prize_value || translatedName}</h2>
+                            <p style="color: #d4d4d8; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 16px; margin: 0 0 ${translatedMinOrder ? '10px' : '35px'} 0; font-style: italic;">${translatedMailDesc || defaultMailDesc[userLang] || defaultMailDesc['de']}</p>
+                            ${translatedMinOrder ? `<p style="color: #ef4444; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 14px; margin: 0 0 35px 0; font-weight: bold; background: rgba(239, 68, 68, 0.1); display: inline-block; padding: 4px 10px; border-radius: 4px;">${translatedMinOrder}</p>` : ''}
                             
                             <table cellpadding="0" cellspacing="0" border="0">
                               <tr>
                                 <td style="background: #ffffff; padding: 12px 25px; border-radius: 6px; text-align: center;">
-                                  <p style="color: #71717a; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 12px; margin: 0; text-transform: uppercase; font-weight: bold;">Gutscheincode</p>
+                                  <p style="color: #71717a; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 12px; margin: 0; text-transform: uppercase; font-weight: bold;">${codeText[userLang] || codeText['de']}</p>
                                   <p style="color: #18181b; font-family: 'Courier New', Courier, monospace; font-size: 26px; font-weight: 900; margin: 5px 0 0 0; letter-spacing: 3px;">${winner.code}</p>
                                 </td>
                               </tr>
                             </table>
                             
-                            <p style="color: #a1a1aa; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 12px; margin-top: 30px; margin-bottom: 0; text-transform: uppercase; font-weight: bold;">Gültig bis 30. April 2026</p>
+                            <p style="color: #a1a1aa; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 12px; margin-top: 30px; margin-bottom: 0; text-transform: uppercase; font-weight: bold;">${validUntil[userLang] || validUntil['de']}</p>
                           </td>
                         </tr>
                       </table>
@@ -422,9 +586,9 @@ async function startServer() {
                   <tr>
                     <td align="center" style="padding: 20px 40px 40px 40px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
                       <p style="font-size: 16px; color: #3f3f46; margin-bottom: 25px; line-height: 1.6;">
-                        Besuche einfach unseren Webshop und gib deinen Gutscheincode direkt am Ende des Bestellvorgangs ein.<br>Wir freuen uns auf dich!
+                        ${translatedMailInst ? translatedMailInst.replace(/\\n/g, '<br>').replace(/\n/g, '<br>') : (defaultMailInst[userLang] || defaultMailInst['de'])}<br><br>${finalGreeting[userLang] || finalGreeting['de']}
                       </p>
-                      <a href="https://skate.ch" style="display: inline-block; background-color: #EF4444; color: #ffffff; text-decoration: none; padding: 16px 36px; font-weight: bold; border-radius: 30px; text-transform: uppercase; letter-spacing: 1.5px; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);">Jetzt online einlösen</a>
+                      <a href="https://skate.ch" style="display: inline-block; background-color: #EF4444; color: #ffffff; text-decoration: none; padding: 16px 36px; font-weight: bold; border-radius: 30px; text-transform: uppercase; letter-spacing: 1.5px; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);">${buttonText[userLang] || buttonText['de']}</a>
                     </td>
                   </tr>
                   

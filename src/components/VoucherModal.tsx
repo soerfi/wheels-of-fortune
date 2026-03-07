@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { X, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface VoucherModalProps {
   result: { id: number, prize: any };
@@ -9,8 +10,9 @@ interface VoucherModalProps {
 }
 
 export default function VoucherModal({ result, settings, onClose }: VoucherModalProps) {
+  const { t, i18n } = useTranslation();
   const [step, setStep] = useState<1 | 2>(1);
-  const [formData, setFormData] = useState({ name: '', email: '' });
+  const [formData, setFormData] = useState({ firstName: '', lastName: '', email: '', newsletter: true });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -21,13 +23,16 @@ export default function VoucherModal({ result, settings, onClose }: VoucherModal
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          user_name: formData.name,
-          user_email: formData.email
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          newsletter: formData.newsletter,
+          user_email: formData.email,
+          language: i18n?.language?.split('-')[0].toLowerCase() || 'de'
         })
       });
       setStep(2);
     } catch (error) {
-      alert('Fehler beim Speichern der Daten.');
+      alert(t('modal.error_general'));
     } finally {
       setIsSubmitting(false);
     }
@@ -52,8 +57,8 @@ export default function VoucherModal({ result, settings, onClose }: VoucherModal
         </button>
 
         <div className="p-8 pb-4 text-center" aria-live="assertive">
-          <h2 id="voucher-modal-title" className="text-6xl font-display uppercase tracking-widest text-white mb-2 shadow-[2px_2px_0_0_#EF4444]">WIN!</h2>
-          <p className="text-xl text-zinc-400 font-bold uppercase tracking-widest">YOU GOT <strong className="text-red-500">{result.prize.name}</strong></p>
+          <h2 id="voucher-modal-title" className="text-4xl md:text-5xl font-display uppercase tracking-widest text-white mb-2 shadow-[2px_2px_0_0_#EF4444]">{t('modal.title')}</h2>
+          <p className="text-xl text-zinc-400 font-bold uppercase tracking-widest">{t('modal.desc_1')} <strong className="text-red-500">{result.prize.name}</strong></p>
           {result.prize.description && (
             <p className="text-sm text-zinc-300 mt-4 font-medium italic max-w-lg mx-auto leading-relaxed">{result.prize.description}</p>
           )}
@@ -61,36 +66,62 @@ export default function VoucherModal({ result, settings, onClose }: VoucherModal
 
         {step === 1 ? (
           <div className="p-8 max-w-md mx-auto">
-            <p className="text-zinc-400 mb-6 text-center font-bold tracking-widest uppercase">Details angeben, um Gutschein zu erhalten.</p>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div>
-                <label className="block text-sm font-bold text-white uppercase tracking-widest mb-2">Name</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.name}
-                  onChange={e => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full bg-zinc-900 border-2 border-zinc-700 px-4 py-3 text-white focus:outline-none focus:border-white transition-colors rounded-none"
-                  placeholder="Dein Name"
-                />
+            <p className="text-zinc-400 mb-6 text-center font-bold tracking-widest uppercase">{t('modal.desc_2')}</p>
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="flex gap-4">
+                <div className="w-1/2">
+                  <label className="block text-sm font-bold text-white uppercase tracking-widest mb-2">{t('modal.first_name')}</label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.firstName}
+                    onChange={e => setFormData({ ...formData, firstName: e.target.value })}
+                    className="w-full bg-zinc-900 border-2 border-zinc-700 px-4 py-3 text-white focus:outline-none focus:border-white transition-colors rounded-none"
+                  />
+                </div>
+                <div className="w-1/2">
+                  <label className="block text-sm font-bold text-white uppercase tracking-widest mb-2">{t('modal.last_name')}</label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.lastName}
+                    onChange={e => setFormData({ ...formData, lastName: e.target.value })}
+                    className="w-full bg-zinc-900 border-2 border-zinc-700 px-4 py-3 text-white focus:outline-none focus:border-white transition-colors rounded-none"
+                  />
+                </div>
               </div>
+
               <div>
-                <label className="block text-sm font-bold text-white uppercase tracking-widest mb-2">E-Mail</label>
+                <label className="block text-sm font-bold text-white uppercase tracking-widest mb-2">{t('modal.email')}</label>
                 <input
                   type="email"
                   required
                   value={formData.email}
                   onChange={e => setFormData({ ...formData, email: e.target.value })}
                   className="w-full bg-zinc-900 border-2 border-zinc-700 px-4 py-3 text-white focus:outline-none focus:border-white transition-colors rounded-none"
-                  placeholder="deine@email.ch"
                 />
               </div>
+
+              <div className="flex items-start gap-3 mt-4">
+                <input
+                  type="checkbox"
+                  id="newsletter"
+                  checked={formData.newsletter}
+                  onChange={e => setFormData({ ...formData, newsletter: e.target.checked })}
+                  className="mt-1 w-5 h-5 bg-zinc-900 border-2 border-zinc-700 checked:bg-red-600 appearance-none flex-shrink-0 cursor-pointer"
+                  style={{ backgroundImage: formData.newsletter ? 'url("data:image/svg+xml;charset=utf-8,%3Csvg viewBox=\'0 0 16 16\' fill=\'%23fff\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M12.207 4.793a1 1 0 0 1 0 1.414l-5 5a1 1 0 0 1-1.414 0l-2-2a1 1 0 0 1 1.414-1.414L6.5 9.086l4.293-4.293a1 1 0 0 1 1.414 0z\'/%3E%3C/svg%3E")' : 'none' }}
+                />
+                <label htmlFor="newsletter" className="text-sm text-zinc-400 cursor-pointer">
+                  {t('modal.newsletter')}
+                </label>
+              </div>
+
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full flex items-center justify-center gap-2 mt-8 px-8 py-5 bg-red-600 hover:bg-white text-white hover:text-black border-2 border-transparent hover:border-black font-display text-2xl uppercase tracking-widest transition-all hover:translate-x-1 hover:-translate-y-1 hover:shadow-[-4px_4px_0_0_#000] disabled:opacity-50"
+                className="w-full flex items-center justify-center gap-2 mt-8 px-8 py-5 bg-red-600 hover:bg-white text-white hover:text-black border-2 border-transparent hover:border-black font-display text-xl uppercase tracking-widest transition-all hover:translate-x-1 hover:-translate-y-1 hover:shadow-[-4px_4px_0_0_#000] disabled:opacity-50 cursor-pointer"
               >
-                {isSubmitting ? 'SENDING...' : 'GET CODE VIA EMAIL'}
+                {isSubmitting ? t('modal.submitting') : t('modal.submit')}
                 <ArrowRight size={24} />
               </button>
             </form>
@@ -105,17 +136,18 @@ export default function VoucherModal({ result, settings, onClose }: VoucherModal
             >
               <CheckCircle2 size={80} className="text-green-500" aria-hidden="true" />
             </motion.div>
-            <h3 className="text-3xl font-display text-white mb-4 uppercase tracking-widest">SUCCESS!</h3>
+            <h3 className="text-3xl font-display text-white mb-4 uppercase tracking-widest">{t('modal.success_title')}</h3>
             <p className="text-zinc-400 font-bold uppercase tracking-widest leading-relaxed">
-              Dein Gutscheincode wurde erfolgreich an<br />
-              <strong className="text-white border-b-2 border-red-500">{formData.email}</strong><br />
-              gesendet.
+              {t('modal.success_desc')}
+            </p>
+            <p className="text-zinc-400 font-bold tracking-widest leading-relaxed mt-4">
+              <strong className="text-white border-b-2 border-red-500">{formData.email}</strong>
             </p>
             <button
               onClick={onClose}
               className="mt-8 px-8 py-4 bg-zinc-800 hover:bg-zinc-700 text-white font-bold uppercase tracking-widest transition-colors w-full border-2 border-zinc-700"
             >
-              OK, DANKE!
+              OK!
             </button>
           </div>
         )}

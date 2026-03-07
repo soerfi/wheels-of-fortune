@@ -13,8 +13,19 @@ export default function AdminPage() {
   const [appAlert, setAppAlert] = useState<{ type: 'error' | 'success', message: string, title?: string } | null>(null);
 
   // Form states
+  const initialPrizeState = {
+    name: '', name_en: '', name_fr: '', name_it: '',
+    color: '#EF4444',
+    description: '', description_en: '', description_fr: '', description_it: '',
+    mail_description: '', mail_description_en: '', mail_description_fr: '', mail_description_it: '',
+    mail_instruction: '', mail_instruction_en: '', mail_instruction_fr: '', mail_instruction_it: '',
+    min_order_value: '', min_order_value_en: '', min_order_value_fr: '', min_order_value_it: '',
+    quantity: 10, prefix: '', custom_codes: '', is_jackpot: false
+  };
   const [editingPrize, setEditingPrize] = useState<any>(null);
-  const [newPrize, setNewPrize] = useState({ name: '', color: '#EF4444', description: '', quantity: 10, prefix: '', custom_codes: '', is_jackpot: false });
+  const [newPrize, setNewPrize] = useState(initialPrizeState);
+  const [formLang, setFormLang] = useState<'de' | 'en' | 'fr' | 'it'>('de');
+  const [editLang, setEditLang] = useState<'de' | 'en' | 'fr' | 'it'>('de');
   const [generateCodesState, setGenerateCodesState] = useState<{ id: number, add_quantity: number, prefix: string } | null>(null);
   const [password, setPassword] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -103,7 +114,7 @@ export default function AdminPage() {
         return;
       }
 
-      setNewPrize({ name: '', color: '#EF4444', description: '', quantity: 10, prefix: '', custom_codes: '', is_jackpot: false });
+      setNewPrize(initialPrizeState);
       fetchData();
     } catch (err) {
       setAppAlert({ type: 'error', message: 'Fehler beim Hinzufügen.' });
@@ -119,23 +130,32 @@ export default function AdminPage() {
       skipEmptyLines: true,
       complete: async (results) => {
         try {
-          // Expect columns: Name, Beschreibung, Wert, Gewichtung, Code
+          // Expect columns: Name (DE), Name EN, Name FR, Name IT, Beschreibung für Win-Pop-up (DE), ...
           const prizesMap: Record<string, any> = {};
 
           results.data.forEach((row: any) => {
-            if (!row.Name) return;
-            const name = row.Name.trim();
+            if (!row['Name (DE)'] && !row.Name) return; // Fallback to 'Name' for older CSVs
+            const name = (row['Name (DE)'] || row.Name).trim();
             if (!prizesMap[name]) {
               prizesMap[name] = {
                 name,
-                description: row.Beschreibung || '',
+                name_en: row['Name EN'] || '', name_fr: row['Name FR'] || '', name_it: row['Name IT'] || '',
+                description: row['Beschreibung für Win-Pop-up (DE)'] || row['Beschreibung für Win-Pop-up'] || '',
+                description_en: row['Beschreibung EN'] || '', description_fr: row['Beschreibung FR'] || '', description_it: row['Beschreibung IT'] || '',
+                mail_description: row['Beschreibung für Mailtext (DE)'] || row['Beschreibung für Mailtext'] || '',
+                mail_description_en: row['Mailtext EN'] || '', mail_description_fr: row['Mailtext FR'] || '', mail_description_it: row['Mailtext IT'] || '',
+                mail_instruction: row['Anweisung für Mail (DE)'] || row['Anweisung für Mail'] || '',
+                mail_instruction_en: row['Anweisung EN'] || '', mail_instruction_fr: row['Anweisung FR'] || '', mail_instruction_it: row['Anweisung IT'] || '',
+                min_order_value: row['Mindestbestellwert (DE)'] || row['Mindestbestellwert'] || '',
+                min_order_value_en: row['Mindestbestellwert EN'] || '', min_order_value_fr: row['Mindestbestellwert FR'] || '', min_order_value_it: row['Mindestbestellwert IT'] || '',
                 value: row.Wert || '',
                 weight: parseInt(row.Gewichtung) || 1,
+                is_jackpot: row['Jackpot Preis'] === '1' || row['Jackpot Preis']?.toLowerCase() === 'ja' || row['Jackpot Preis']?.toLowerCase() === 'yes',
                 codes: []
               };
             }
-            if (row.Code && row.Code.trim() !== '') {
-              prizesMap[name].codes.push(row.Code.trim());
+            if (row['Gutschein Codes'] && row['Gutschein Codes'].trim() !== '') {
+              prizesMap[name].codes.push(row['Gutschein Codes'].trim());
             }
           });
 
@@ -162,7 +182,9 @@ export default function AdminPage() {
   };
 
   const generateSampleCSV = () => {
-    const csvContent = '\uFEFFName;Beschreibung;Wert;Gewichtung;Code\nTest Preis;Du hast etwas Tolles gewonnen!;CHF 50.-;1;TEST-123\nAnderer Preis;Ein weiterer Gewinn;15% Rabatt;10;TEST-456';
+    const csvContent = '\uFEFFName (DE);Name EN;Name FR;Name IT;Beschreibung für Win-Pop-up (DE);Beschreibung EN;Beschreibung FR;Beschreibung IT;Beschreibung für Mailtext (DE);Mailtext EN;Mailtext FR;Mailtext IT;Anweisung für Mail (DE);Anweisung EN;Anweisung FR;Anweisung IT;Mindestbestellwert (DE);Mindestbestellwert EN;Mindestbestellwert FR;Mindestbestellwert IT;Wert;Gewichtung;Jackpot Preis;Gutschein Codes\n' +
+      'Test Preis;Test Prize;Prix Test;Premio Test;Du hast etwas Tolles gewonnen!;You won something great!;Vous avez gagné!;Hai vinto!;;;;;;;;;;;;;CHF 50.-;1;0;TEST-123\n' +
+      'Anderer Preis;;;;Ein weiterer Gewinn;;;;;;;;;;;;;;;;15% Rabatt;10;0;TEST-456';
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
@@ -363,34 +385,73 @@ export default function AdminPage() {
             <div className="space-y-8">
               {/* Add Prize Form */}
               <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8">
-                <h2 className="text-2xl font-bold mb-6 uppercase tracking-widest border-b border-zinc-800 pb-4">Neuen Preis hinzufügen</h2>
+                <div className="flex justify-between items-center mb-6 border-b border-zinc-800 pb-4">
+                  <h2 className="text-2xl font-bold uppercase tracking-widest">Neuen Preis hinzufügen</h2>
+
+                  {/* Form Language Switcher */}
+                  <div className="flex gap-2">
+                    {['de', 'en', 'fr', 'it'].map(lang => (
+                      <button
+                        type="button"
+                        key={lang}
+                        onClick={() => setFormLang(lang as any)}
+                        className={`px-4 py-2 uppercase font-bold text-xs rounded transition-colors ${formLang === lang ? 'bg-red-600 text-white' : 'bg-zinc-800 text-zinc-400 hover:text-white'}`}
+                      >
+                        {lang}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 <form onSubmit={handleAddPrize} className="flex flex-col gap-6">
-                  <div className="flex flex-col md:flex-row gap-6">
-                    <div className="flex-[2]">
-                      <label className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">Name des Preises</label>
-                      <input type="text" required value={newPrize.name} onChange={e => setNewPrize({ ...newPrize, name: e.target.value })} className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-red-500" placeholder="z.B. SKATE.CH Gutschein" />
-                    </div>
-                    <div className="flex-1">
-                      <label className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">Wert</label>
-                      <input type="text" value={newPrize.value} onChange={e => setNewPrize({ ...newPrize, value: e.target.value })} className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-red-500" placeholder="z.B. CHF 50.-" />
-                    </div>
-                    <div className="flex-1">
-                      <label className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">Gewichtung</label>
-                      <input type="number" min="1" value={newPrize.weight || 1} onChange={e => setNewPrize({ ...newPrize, weight: parseInt(e.target.value) || 1 })} className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-red-500" placeholder="z.B. 10" />
-                    </div>
-                  </div>
-                  <div className="flex gap-6">
-                    <div className="flex-1">
-                      <label className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">Beschreibung (für Win-Popup / E-Mail)</label>
-                      <textarea value={newPrize.description} onChange={e => setNewPrize({ ...newPrize, description: e.target.value })} className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-red-500" placeholder="Du erhältst 50 CHF Rabatt auf deinen nächsten Einkauf..." rows={2} />
-                    </div>
-                    <div className="w-48 flex items-center bg-zinc-950 border border-zinc-800 rounded-lg px-4">
-                      <label className="flex items-center gap-3 cursor-pointer w-full">
-                        <input type="checkbox" checked={newPrize.is_jackpot} onChange={e => setNewPrize({ ...newPrize, is_jackpot: e.target.checked })} className="w-5 h-5 accent-yellow-500 rounded border-zinc-700 bg-zinc-900" />
-                        <span className="text-sm font-bold text-yellow-500 uppercase tracking-wider">Jackpot Preis</span>
-                      </label>
-                    </div>
-                  </div>
+                  {(() => {
+                    const l = formLang === 'de' ? '' : `_${formLang}`;
+                    return (
+                      <>
+                        <div className="flex flex-col md:flex-row gap-6">
+                          <div className="flex-[2]">
+                            <label className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">Anzeigename auf Wheel ({formLang.toUpperCase()})</label>
+                            <input type="text" required={formLang === 'de'} value={(newPrize as any)[`name${l}`] || ''} onChange={e => setNewPrize({ ...newPrize, [`name${l}`]: e.target.value })} className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-red-500" placeholder="z.B. SKATE.CH Gutschein" />
+                          </div>
+                          <div className="flex-1">
+                            <label className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">Wert</label>
+                            <input type="text" value={newPrize.value} onChange={e => setNewPrize({ ...newPrize, value: e.target.value })} className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-red-500" placeholder="z.B. CHF 50.-" />
+                          </div>
+                          <div className="flex-1">
+                            <label className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">Gewichtung</label>
+                            <input type="number" min="1" value={newPrize.weight || 1} onChange={e => setNewPrize({ ...newPrize, weight: parseInt(e.target.value) || 1 })} className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-red-500" placeholder="z.B. 10" />
+                          </div>
+                        </div>
+                        <div className="flex gap-6">
+                          <div className="flex-1">
+                            <label className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">Beschreibung für Win-Pop-up ({formLang.toUpperCase()})</label>
+                            <textarea value={(newPrize as any)[`description${l}`] || ''} onChange={e => setNewPrize({ ...newPrize, [`description${l}`]: e.target.value })} className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-red-500" placeholder="Du erhältst 50 CHF Rabatt auf deinen nächsten Einkauf..." rows={2} />
+                          </div>
+                          <div className="w-48 flex items-center bg-zinc-950 border border-zinc-800 rounded-lg px-4">
+                            <label className="flex items-center gap-3 cursor-pointer w-full">
+                              <input type="checkbox" checked={newPrize.is_jackpot} onChange={e => setNewPrize({ ...newPrize, is_jackpot: e.target.checked })} className="w-5 h-5 accent-yellow-500 rounded border-zinc-700 bg-zinc-900" />
+                              <span className="text-sm font-bold text-yellow-500 uppercase tracking-wider">Jackpot Preis</span>
+                            </label>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col md:flex-row gap-6">
+                          <div className="flex-1">
+                            <label className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">Beschreibung für Mailtext ({formLang.toUpperCase()})</label>
+                            <textarea value={(newPrize as any)[`mail_description${l}`] || ''} onChange={e => setNewPrize({ ...newPrize, [`mail_description${l}`]: e.target.value })} className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-red-500" placeholder="Zeige abweichenden Text nur in der Gewinn-Mail (Optional)" rows={2} />
+                          </div>
+                          <div className="flex-1">
+                            <label className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">Anweisung für Mail ({formLang.toUpperCase()})</label>
+                            <textarea value={(newPrize as any)[`mail_instruction${l}`] || ''} onChange={e => setNewPrize({ ...newPrize, [`mail_instruction${l}`]: e.target.value })} className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-red-500" placeholder="Besuche unseren Shop, leg dies in den Korb..." rows={2} />
+                          </div>
+                          <div className="flex-1">
+                            <label className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">Mindestbestellwert ({formLang.toUpperCase()}) (Opt.)</label>
+                            <input type="text" value={(newPrize as any)[`min_order_value${l}`] || ''} onChange={e => setNewPrize({ ...newPrize, [`min_order_value${l}`]: e.target.value })} className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-red-500" placeholder="z.B. ab CHF 100.-" />
+                          </div>
+                        </div>
+                      </>
+                    );
+                  })()}
 
                   {/* CODES OPTIONS */}
                   <div className="bg-zinc-950/50 p-6 rounded-lg border border-zinc-800">
@@ -410,7 +471,7 @@ export default function AdminPage() {
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-6 pb-4 border-b border-zinc-800">
                   <div>
                     <h2 className="text-xl font-bold uppercase tracking-widest text-white mb-2">Alternativ: Preis & Code CSV-Import</h2>
-                    <p className="text-zinc-500 text-sm">Spalten: <code className="text-red-400">Name, Beschreibung, Wert, Gewichtung, Code</code></p>
+                    <p className="text-zinc-500 text-sm">Lade das Muster für alle benötigten Spalten inklusive Sprachvarianten (Name EN, Mailtext FR, etc.) herunter.</p>
                   </div>
                   <button type="button" onClick={generateSampleCSV} className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors font-bold text-sm uppercase tracking-wider">
                     <Download size={16} /> Muster herunterladen
@@ -452,18 +513,39 @@ export default function AdminPage() {
                         {editingPrize?.id === prize.id ? (
                           <td colSpan={4} className="p-4">
                             <form onSubmit={handleUpdatePrize} className="flex flex-col gap-4 bg-zinc-950 p-4 rounded-lg border border-zinc-700">
-                              <div className="flex gap-4">
-                                <input type="text" value={editingPrize.name} onChange={e => setEditingPrize({ ...editingPrize, name: e.target.value })} className="flex-[2] bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-white" placeholder="Preis Name..." />
-                                <input type="text" value={editingPrize.value || ''} onChange={e => setEditingPrize({ ...editingPrize, value: e.target.value })} className="flex-1 bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-white" placeholder="Wert..." title="Wert" />
-                                <input type="number" min="1" value={editingPrize.weight || 1} onChange={e => setEditingPrize({ ...editingPrize, weight: parseInt(e.target.value) || 1 })} className="w-20 bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-white" placeholder="Gew." title="Gewichtung" />
+                              <div className="flex gap-2">
+                                {['de', 'en', 'fr', 'it'].map(lang => (
+                                  <button type="button" key={lang} onClick={() => setEditLang(lang as any)} className={`px-3 py-1 uppercase font-bold text-[10px] rounded transition-colors ${editLang === lang ? 'bg-red-600 text-white' : 'bg-zinc-800 text-zinc-400 hover:text-white'}`}>
+                                    {lang}
+                                  </button>
+                                ))}
                               </div>
-                              <div className="flex gap-4 items-start">
-                                <textarea value={editingPrize.description || ''} onChange={e => setEditingPrize({ ...editingPrize, description: e.target.value })} className="flex-1 bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-white text-sm" placeholder="Beschreibung (für E-Mail und WIN-Popup)" rows={2} />
-                                <label className="flex items-center gap-3 cursor-pointer bg-zinc-900 border border-zinc-700 rounded px-4 py-3 w-48 shrink-0">
-                                  <input type="checkbox" checked={!!editingPrize.is_jackpot} onChange={e => setEditingPrize({ ...editingPrize, is_jackpot: e.target.checked })} className="w-5 h-5 accent-yellow-500 rounded border-zinc-700 bg-zinc-950" />
-                                  <span className="text-sm font-bold text-yellow-500 uppercase tracking-wider">Jackpot</span>
-                                </label>
-                              </div>
+                              {(() => {
+                                const l = editLang === 'de' ? '' : `_${editLang}`;
+                                return (
+                                  <>
+                                    <div className="flex gap-4">
+                                      <input type="text" value={editingPrize[`name${l}`] || ''} onChange={e => setEditingPrize({ ...editingPrize, [`name${l}`]: e.target.value })} className="flex-[2] bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-white" placeholder={`Preis Name (${editLang.toUpperCase()})...`} />
+                                      <input type="text" value={editingPrize.value || ''} onChange={e => setEditingPrize({ ...editingPrize, value: e.target.value })} className="flex-1 bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-white" placeholder="Wert..." title="Wert" />
+                                      <input type="number" min="1" value={editingPrize.weight || 1} onChange={e => setEditingPrize({ ...editingPrize, weight: parseInt(e.target.value) || 1 })} className="w-20 bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-white" placeholder="Gew." title="Gewichtung" />
+                                    </div>
+                                    <div className="flex gap-4 items-start">
+                                      <div className="flex-1 flex flex-col gap-4">
+                                        <textarea value={editingPrize[`description${l}`] || ''} onChange={e => setEditingPrize({ ...editingPrize, [`description${l}`]: e.target.value })} className="bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-white text-sm" placeholder={`Beschreibung für Win-Pop-up (${editLang.toUpperCase()})`} rows={2} />
+                                        <div className="flex gap-4">
+                                          <textarea value={editingPrize[`mail_description${l}`] || ''} onChange={e => setEditingPrize({ ...editingPrize, [`mail_description${l}`]: e.target.value })} className="flex-1 bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-white text-sm" placeholder={`Beschreibung für Mailtext (${editLang.toUpperCase()})`} rows={2} />
+                                          <textarea value={editingPrize[`mail_instruction${l}`] || ''} onChange={e => setEditingPrize({ ...editingPrize, [`mail_instruction${l}`]: e.target.value })} className="flex-1 bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-white text-sm" placeholder={`Anweisung für Mail (${editLang.toUpperCase()})`} rows={2} />
+                                          <input type="text" value={editingPrize[`min_order_value${l}`] || ''} onChange={e => setEditingPrize({ ...editingPrize, [`min_order_value${l}`]: e.target.value })} className="w-48 bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-white text-sm" placeholder={`Mindestbest. (${editLang.toUpperCase()})`} />
+                                        </div>
+                                      </div>
+                                      <label className="flex items-center gap-3 cursor-pointer bg-zinc-900 border border-zinc-700 rounded px-4 py-3 w-48 shrink-0">
+                                        <input type="checkbox" checked={!!editingPrize.is_jackpot} onChange={e => setEditingPrize({ ...editingPrize, is_jackpot: e.target.checked })} className="w-5 h-5 accent-yellow-500 rounded border-zinc-700 bg-zinc-950" />
+                                        <span className="text-sm font-bold text-yellow-500 uppercase tracking-wider">Jackpot</span>
+                                      </label>
+                                    </div>
+                                  </>
+                                );
+                              })()}
                               <div className="flex justify-end gap-2">
                                 <button type="submit" className="px-4 py-2 bg-green-600 hover:bg-green-500 rounded text-white flex items-center gap-2 text-sm"><Save size={16} /> Speichern</button>
                                 <button type="button" onClick={() => setEditingPrize(null)} className="px-4 py-2 bg-zinc-700 hover:bg-zinc-600 rounded text-white text-sm flex items-center gap-2"><X size={16} /> Abbrechen</button>

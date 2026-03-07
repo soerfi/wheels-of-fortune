@@ -1,0 +1,28 @@
+{
+    "wheel": {
+        "try_your_luck": "Versuch dein Glück",
+        "spin_now": "SPIN NOW!",
+        "you_won": "Du hast gewonnen!",
+        "paused": "Aktion pausiert",
+        "paused_desc": "Das Glücksrad ist momentan im Pausenmodus. Die nächste Runde startet bald!",
+        "no_sessions": "Das Glücksrad hat zurzeit keine aktiven Sessions geplant.",
+        "already_spun": "Schon gedreht!",
+        "already_spun_desc": "Du hast dein Glück bereits versucht. Komm bei der nächsten Runde wieder vorbei!",
+        "all_gone": "Alles abgeräumt!",
+        "all_gone_desc": "Alle Preise wurden bereits gewonnen. Stay tuned für die nächste Runde!"
+    },
+    "modal": {
+        "title": "WOOHOO! DU HAST GEWONNEN!",
+        "desc_1": "Du hast folgenden Preis abgestaubt:",
+        "desc_2": "Trage deine Daten ein, um den Gutscheincode direkt per E-Mail zu erhalten.",
+        "first_name": "Vorname",
+        "last_name": "Nachname",
+        "email": "E-Mail Adresse",
+        "newsletter": "Ich bin damit einverstanden, dass ihr mir ab und zu mal einen Newsletter zukommen lasst",
+        "submit": "Gutschein jetzt senden",
+        "submitting": "Wird verarbeitet...",
+        "success_title": "CHECK DEIN POSTFACH!",
+        "success_desc": "Dein Gutscheincode ist soeben an dich rausgegangen. Viel Spass damit!",
+        "error_general": "Es ist ein Fehler aufgetreten. Bitte versuche es noch einmal."
+    }
+}

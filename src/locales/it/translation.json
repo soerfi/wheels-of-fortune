@@ -1,0 +1,28 @@
+{
+    "wheel": {
+        "try_your_luck": "Tenta la fortuna",
+        "spin_now": "SPIN NOW!",
+        "you_won": "Hai vinto!",
+        "paused": "Azione in pausa",
+        "paused_desc": "La ruota è attualmente in pausa. Il prossimo giro inizierà presto!",
+        "no_sessions": "Al momento la ruota non ha sessioni attive programmate.",
+        "already_spun": "Hai già girato!",
+        "already_spun_desc": "Hai già tentato la fortuna. Torna al prossimo giro!",
+        "all_gone": "Tutto esaurito!",
+        "all_gone_desc": "Tutti i premi sono già stati vinti. Resta sintonizzato per il prossimo giro!"
+    },
+    "modal": {
+        "title": "WOOHOO! HAI VINTO!",
+        "desc_1": "Hai vinto il seguente premio:",
+        "desc_2": "Inserisci i tuoi dati per ricevere immediatamente il tuo codice sconto personalizzato via email.",
+        "first_name": "Nome",
+        "last_name": "Cognome",
+        "email": "Indirizzo e-mail",
+        "newsletter": "Accetto di ricevere di tanto in tanto una newsletter",
+        "submit": "Invia ora il buono",
+        "submitting": "Elaborazione...",
+        "success_title": "CONTROLLA LA TUA INBOX!",
+        "success_desc": "Il tuo codice sconto ti è appena stato inviato. Buon divertimento!",
+        "error_general": "Si è verificato un errore. Per favore, riprova."
+    }
+}

@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { animate, motion, useMotionValue, useTransform } from 'motion/react';
+import { useTranslation } from 'react-i18next';
 
 interface Prize {
     id: number;
     name: string;
     color?: string;
     description?: string;
+    is_jackpot?: number;
 }
 
 interface SpinResult {
@@ -37,7 +39,9 @@ function truncateLabel(label: string, maxLength: number): string {
 }
 
 export default function Wheel({ prizes, onSpin, onSpinComplete }: WheelProps) {
+    const { t } = useTranslation();
     const [isSpinning, setIsSpinning] = useState(false);
+    const [hasWon, setHasWon] = useState(false);
     const completeTimeoutRef = useRef<number | null>(null);
 
     const rotateX = useMotionValue(0);
@@ -126,12 +130,18 @@ export default function Wheel({ prizes, onSpin, onSpinComplete }: WheelProps) {
                         const confettiModule = await import('canvas-confetti');
                         const confetti = confettiModule.default;
 
+                        // Check if it's the jackpot prize
+                        const isJackpot = result.prize.is_jackpot === 1;
+
                         confetti({
-                            particleCount: 150,
-                            spread: 80,
+                            particleCount: isJackpot ? 250 : 150,
+                            spread: isJackpot ? 100 : 80,
                             origin: { y: 0.6 },
-                            colors: ['#A91101', '#18181B', '#FFFFFF']
+                            colors: isJackpot ? ['#FFD700', '#DAA520', '#FFFFFF'] : ['#A91101', '#18181B', '#FFFFFF'],
+                            ticks: isJackpot ? 300 : 200,
                         });
+
+                        setHasWon(true);
                     } catch (confettiError) {
                         console.error('Confetti failed to load:', confettiError);
                     }
@@ -221,12 +231,12 @@ export default function Wheel({ prizes, onSpin, onSpinComplete }: WheelProps) {
 
             <button
                 onClick={handleSpinClick}
-                disabled={isSpinning || numPrizes === 0}
+                disabled={isSpinning || numPrizes === 0 || hasWon}
                 aria-label={isSpinning ? 'Glücksrad dreht sich, bitte warten' : 'Dreh am Glücksrad'}
-                className="relative mt-12 md:mt-16 px-12 md:px-20 py-4 md:py-6 border-[3px] border-white bg-[#b51401] hover:bg-[#9c1101] text-white font-display text-4xl md:text-5xl uppercase tracking-widest transition-all rounded-[3rem] hover:scale-[1.02] active:scale-95 shadow-[0_0_40px_rgba(181,20,1,0.6)] disabled:opacity-50 disabled:pointer-events-none"
+                className="relative mt-8 md:mt-12 px-10 md:px-16 py-3 md:py-5 border-[3px] border-white bg-[#b51401] hover:bg-[#9c1101] text-white font-display text-3xl md:text-4xl uppercase tracking-widest transition-all rounded-[3rem] hover:scale-[1.02] active:scale-95 shadow-[0_0_40px_rgba(181,20,1,0.6)] disabled:opacity-50 disabled:pointer-events-none"
             >
                 <div className="absolute inset-0 rounded-[3rem] shadow-[inset_0_-4px_10px_rgba(0,0,0,0.1)] pointer-events-none"></div>
-                <span className="relative z-10">{isSpinning ? 'WAIT...' : 'SPIN ROW!'}</span>
+                <span className="relative z-10">{hasWon ? t('wheel.you_won') : isSpinning ? 'WAIT...' : t('wheel.spin_now')}</span>
             </button>
         </div>
     );

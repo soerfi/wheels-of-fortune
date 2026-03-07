@@ -1,0 +1,28 @@
+{
+    "wheel": {
+        "try_your_luck": "Tentez votre chance",
+        "spin_now": "SPIN NOW!",
+        "you_won": "Gagné !",
+        "paused": "Action en pause",
+        "paused_desc": "La roue est actuellement en pause. La prochaine session commence bientôt !",
+        "no_sessions": "La roue n'a pas de sessions actives prévues pour le moment.",
+        "already_spun": "Déjà tourné !",
+        "already_spun_desc": "Vous avez déjà tenté votre chance. Revenez à la prochaine session !",
+        "all_gone": "Tout est parti !",
+        "all_gone_desc": "Tous les prix ont déjà été gagnés. Restez à l'écoute pour la prochaine session !"
+    },
+    "modal": {
+        "title": "WOOHOO ! VOUS AVEZ GAGNÉ !",
+        "desc_1": "Vous avez remporté le prix suivant :",
+        "desc_2": "Entrez vos coordonnées pour recevoir immédiatement votre code de bon personnalisé par e-mail.",
+        "first_name": "Prénom",
+        "last_name": "Nom",
+        "email": "Adresse e-mail",
+        "newsletter": "J'accepte de recevoir de temps en temps une newsletter",
+        "submit": "Envoyer le bon maintenant",
+        "submitting": "Traitement en cours...",
+        "success_title": "VÉRIFIEZ VOTRE BOÎTE DE RÉCEPTION !",
+        "success_desc": "Votre code de bon vient de vous être envoyé. Profitez-en bien !",
+        "error_general": "Une erreur s'est produite. Veuillez réessayer."
+    }
+}

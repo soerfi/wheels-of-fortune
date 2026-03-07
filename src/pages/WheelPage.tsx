@@ -3,8 +3,10 @@ import Wheel from '../components/Wheel';
 import VoucherModal from '../components/VoucherModal';
 import AlertModal from '../components/AlertModal';
 import { motion } from 'motion/react';
+import { useTranslation } from 'react-i18next';
 
 export default function WheelPage() {
+  const { i18n } = useTranslation();
   const [settings, setSettings] = useState<any>(null);
   const [prizes, setPrizes] = useState<any[]>([]);
   const [wheelPrizes, setWheelPrizes] = useState<any[]>([]);
@@ -32,10 +34,20 @@ export default function WheelPage() {
       setSettings(s);
 
       const available = p.filter((pr: any) => pr.remaining_quantity > 0);
-      setPrizes(available);
 
-      if (available.length > 0) {
-        const sorted = [...available].sort((a, b) => (a.weight || 1) - (b.weight || 1));
+      const lang = i18n?.language?.split('-')[0].toLowerCase() || 'de';
+      const l = ['en', 'fr', 'it'].includes(lang) ? `_${lang}` : '';
+
+      const localizedPrizes = available.map((pr: any) => ({
+        ...pr,
+        name: pr[`name${l}`] || pr.name,
+        description: pr[`description${l}`] || pr.description,
+      }));
+
+      setPrizes(localizedPrizes);
+
+      if (localizedPrizes.length > 0) {
+        const sorted = [...localizedPrizes].sort((a, b) => (a.weight || 1) - (b.weight || 1));
         const TOTAL_SLOTS = 18;
 
         // Find if there is a jackpot prize among available prizes
@@ -101,6 +113,15 @@ export default function WheelPage() {
   const handleSpinComplete = (data: any) => {
     localStorage.setItem('skate_wheel_has_spun', 'true');
     setHasSpun(true);
+
+    // localize result right before showing popup
+    const lang = i18n?.language?.split('-')[0].toLowerCase() || 'de';
+    const l = ['en', 'fr', 'it'].includes(lang) ? `_${lang}` : '';
+    if (data && data.prize) {
+      data.prize.name = data.prize[`name${l}`] || data.prize.name;
+      data.prize.description = data.prize[`description${l}`] || data.prize.description;
+    }
+
     setResult(data);
     fetchData(); // Refresh prizes
   };
