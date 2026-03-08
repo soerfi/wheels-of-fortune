@@ -70,26 +70,18 @@ Beim Ausrollen der App auf einen Live-Server (z.B. VPS oder Docker-Umgebung) mü
    FROM_EMAIL=skate@deinedomain.ch
    ```
 
-2. **Frontend Build**
-   Da es sich um eine Vite-Anwendung (React) handelt, muss das Frontend vor dem Start kompiliert werden:
+3. **Automated Docker Deployment (Empfohlen)**
+   Das Projekt ist vollständig für Docker-Orchestrierung vorbereitet. Der empfohlene Weg auf Linux-Servern ist die Nutzung des bereitgestellten `deploy.sh` Scripts:
    ```bash
-   npm install
-   npm run build
+   sh deploy.sh
    ```
-   Dies erzeugt den statischen `dist/` Ordner, den der Express-Server (`server.ts`) in Produktion automatisch ausliefert.
+   Dieses Script:
+   * Führt einen TypeScript Type-Check durch (`npx tsc --noEmit`).
+   * Zündet via `docker-compose up -d --build` einen Container basierend auf dem `Dockerfile`.
+   * Der Container baut das Frontend (`npm run build`) und startet den Express Server auf Port `3001` (`npx tsx server.ts`).
 
-3. **Backend Start**
-   Der Node.js Server (`server.ts`) dient sowohl als API als auch als Host für das React-Pendant. Normalerweise startet man diesen über PM2 (Process Manager) oder einen Docker-Container:
-   ```bash
-   # Via Node direkt (TypeScript Interpreter muss verfügbar sein, oder transpilieren)
-   npx tsx server.ts
-   
-   # ODER via PM2 für Dauerbetrieb
-   pm2 start 'npx tsx server.ts' --name wheel-app
-   ```
-
-4. **Datenbank Persistenz**
-   Achte darauf, dass die Datei `skate_wheel.db` beim Deployment erhalten bleibt! In Docker z.B. mittels persistent Volumes mappen.
+4. **Datenbank Persistenz (Volumes)**
+   Der SQLite Pfad ist dynamisch. Durch das `docker-compose.yml` wird der lokale `/data` Ordner des Servers in den Container gemappt (`DB_PATH=/app/data/skate_wheel.db`). Achte beim manuellen Setup darauf, dass die Volume-Bindings für die persistente `skate_wheel.db` mitsamt Wal-Files erhalten bleiben!
 
 ---
 
