@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  wheel-app:
+    build: .
+    container_name: wheel-of-fortune
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    volumes:
+      # Mount the unique data folder to the container to persist the SQLite database.
+      # This ensures skate_wheel.db and its -wal / -shm temporary files are never lost during restarts.
+      - ./data:/app/data
+    environment:
+      # Instruct the app to store the database inside the mapped volume
+      - DB_PATH=/app/data/skate_wheel.db
+    env_file:
+      - .env

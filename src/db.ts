@@ -1,7 +1,17 @@
 import Database from 'better-sqlite3';
 import path from 'path';
+import fs from 'fs';
 
-const dbPath = path.resolve(process.cwd(), 'skate_wheel.db');
+const dbPath = process.env.DB_PATH || path.resolve(process.cwd(), 'skate_wheel.db');
+
+// Ensure directory exists if DB_PATH is provided (e.g., for Docker volume)
+if (process.env.DB_PATH) {
+  const dir = path.dirname(dbPath);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+}
+
 export const db = new Database(dbPath);
 
 // Use WAL mode for better concurrency
