@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
-import { Settings, Gift, Trophy, Plus, Trash2, Edit2, Save, X, Download, Upload, Eye } from 'lucide-react';
+import { Settings, Gift, Trophy, Plus, Trash2, Edit2, Save, X, Download, Upload, Eye, Ticket, Copy } from 'lucide-react';
 import Papa from 'papaparse';
 import AlertModal from '../components/AlertModal';
+import CodeManagerModal from '../components/CodeManagerModal';
 
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<'settings' | 'prizes' | 'winners'>('settings');
@@ -20,7 +21,7 @@ export default function AdminPage() {
     mail_description: '', mail_description_en: '', mail_description_fr: '', mail_description_it: '',
     mail_instruction: '', mail_instruction_en: '', mail_instruction_fr: '', mail_instruction_it: '',
     min_order_value: '', min_order_value_en: '', min_order_value_fr: '', min_order_value_it: '',
-    quantity: 10, prefix: '', custom_codes: '', is_jackpot: false
+    quantity: 10, prefix: '', custom_codes: '', is_jackpot: false, is_same_code: false
   };
   const [editingPrize, setEditingPrize] = useState<any>(null);
   const [newPrize, setNewPrize] = useState(initialPrizeState);
@@ -94,7 +95,12 @@ export default function AdminPage() {
     e.preventDefault();
     try {
       const payload = { ...newPrize };
-      const customCodesArray = newPrize.custom_codes.split('\n').map(c => c.trim()).filter(Boolean);
+      let customCodesArray: string[] = [];
+      if (newPrize.is_same_code) {
+        customCodesArray = Array(newPrize.quantity).fill(newPrize.custom_codes.trim()).filter(Boolean);
+      } else {
+        customCodesArray = newPrize.custom_codes.split('\n').map(c => c.trim()).filter(Boolean);
+      }
 
       if (customCodesArray.length === 0) {
         setAppAlert({ type: 'error', message: 'Du musst mindestens einen Code eingeben, um einen Preis zu erstellen.' });
@@ -151,6 +157,7 @@ export default function AdminPage() {
                 value: row.Wert || '',
                 weight: parseInt(row.Gewichtung) || 1,
                 is_jackpot: row['Jackpot Preis'] === '1' || row['Jackpot Preis']?.toLowerCase() === 'ja' || row['Jackpot Preis']?.toLowerCase() === 'yes',
+                is_same_code: row['Same Code for all'] === '1' || row['Same Code for all']?.toLowerCase() === 'ja' || row['Same Code for all']?.toLowerCase() === 'yes',
                 codes: []
               };
             }
@@ -182,14 +189,45 @@ export default function AdminPage() {
   };
 
   const generateSampleCSV = () => {
-    const csvContent = '\uFEFFName (DE);Name EN;Name FR;Name IT;Beschreibung für Win-Pop-up (DE);Beschreibung EN;Beschreibung FR;Beschreibung IT;Beschreibung für Mailtext (DE);Mailtext EN;Mailtext FR;Mailtext IT;Anweisung für Mail (DE);Anweisung EN;Anweisung FR;Anweisung IT;Mindestbestellwert (DE);Mindestbestellwert EN;Mindestbestellwert FR;Mindestbestellwert IT;Wert;Gewichtung;Jackpot Preis;Gutschein Codes\n' +
-      'Test Preis;Test Prize;Prix Test;Premio Test;Du hast etwas Tolles gewonnen!;You won something great!;Vous avez gagné!;Hai vinto!;;;;;;;;;;;;;CHF 50.-;1;0;TEST-123\n' +
-      'Anderer Preis;;;;Ein weiterer Gewinn;;;;;;;;;;;;;;;;15% Rabatt;10;0;TEST-456';
+    const csvContent = '\uFEFFName (DE);Name EN;Name FR;Name IT;Beschreibung für Win-Pop-up (DE);Beschreibung EN;Beschreibung FR;Beschreibung IT;Beschreibung für Mailtext (DE);Mailtext EN;Mailtext FR;Mailtext IT;Anweisung für Mail (DE);Anweisung EN;Anweisung FR;Anweisung IT;Mindestbestellwert (DE);Mindestbestellwert EN;Mindestbestellwert FR;Mindestbestellwert IT;Wert;Gewichtung;Jackpot Preis;Same Code for all;Gutschein Codes\n' +
+      'Test Preis;Test Prize;Prix Test;Premio Test;Du hast etwas Tolles gewonnen!;You won something great!;Vous avez gagné!;Hai vinto!;;;;;;;;;;;;;CHF 50.-;1;0;0;TEST-123\n' +
+      'Anderer Preis;;;;Ein weiterer Gewinn;;;;;;;;;;;;;;;;15% Rabatt;10;0;1;TEST-456';
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     link.download = 'skate-ch-preise-muster.csv';
     link.click();
+  };
+
+  const exportPrizes = async () => {
+    try {
+      const res = await fetch('/api/admin/export-prizes', {
+        headers: { 'Authorization': `Bearer ${authToken}` }
+      });
+      if (!res.ok) throw new Error('Export failed');
+      const prizesObj = await res.json();
+
+      const csvContent = [
+        ['Name (DE)', 'Name EN', 'Name FR', 'Name IT', 'Beschreibung für Win-Pop-up (DE)', 'Beschreibung EN', 'Beschreibung FR', 'Beschreibung IT', 'Beschreibung für Mailtext (DE)', 'Mailtext EN', 'Mailtext FR', 'Mailtext IT', 'Anweisung für Mail (DE)', 'Anweisung EN', 'Anweisung FR', 'Anweisung IT', 'Mindestbestellwert (DE)', 'Mindestbestellwert EN', 'Mindestbestellwert FR', 'Mindestbestellwert IT', 'Wert', 'Gewichtung', 'Jackpot Preis', 'Same Code for all', 'Gutschein Codes'],
+        ...prizesObj.map((p: any) => [
+          p.name || '', p.name_en || '', p.name_fr || '', p.name_it || '',
+          p.description || '', p.description_en || '', p.description_fr || '', p.description_it || '',
+          p.mail_description || '', p.mail_description_en || '', p.mail_description_fr || '', p.mail_description_it || '',
+          p.mail_instruction || '', p.mail_instruction_en || '', p.mail_instruction_fr || '', p.mail_instruction_it || '',
+          p.min_order_value || '', p.min_order_value_en || '', p.min_order_value_fr || '', p.min_order_value_it || '',
+          p.value || '', p.weight || '1', p.is_jackpot ? '1' : '0', p.is_same_code ? '1' : '0',
+          p.codes && p.codes.length > 0 ? p.codes.join('\n') : ''
+        ].map(val => `"${String(val).replace(/"/g, '""')}"`))
+      ].map(e => e.join(';')).join('\n');
+
+      const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `skate-ch-preise-export-${new Date().toISOString().split('T')[0]}.csv`;
+      link.click();
+    } catch (err) {
+      setAppAlert({ type: 'error', message: 'Fehler beim Exportieren der Preise.' });
+    }
   };
 
   const handleUpdatePrize = async (e: React.FormEvent) => {
@@ -205,6 +243,39 @@ export default function AdminPage() {
     } catch (err) {
       setAppAlert({ type: 'error', message: 'Fehler beim Aktualisieren.' });
     }
+  };
+
+  const handleCopyPrize = (prizeToCopy: any) => {
+    setNewPrize({
+      name: `${prizeToCopy.name} (Kopie)`,
+      name_en: prizeToCopy.name_en || '',
+      name_fr: prizeToCopy.name_fr || '',
+      name_it: prizeToCopy.name_it || '',
+      color: prizeToCopy.color || '#EF4444',
+      description: prizeToCopy.description || '',
+      description_en: prizeToCopy.description_en || '',
+      description_fr: prizeToCopy.description_fr || '',
+      description_it: prizeToCopy.description_it || '',
+      mail_description: prizeToCopy.mail_description || '',
+      mail_description_en: prizeToCopy.mail_description_en || '',
+      mail_description_fr: prizeToCopy.mail_description_fr || '',
+      mail_description_it: prizeToCopy.mail_description_it || '',
+      mail_instruction: prizeToCopy.mail_instruction || '',
+      mail_instruction_en: prizeToCopy.mail_instruction_en || '',
+      mail_instruction_fr: prizeToCopy.mail_instruction_fr || '',
+      mail_instruction_it: prizeToCopy.mail_instruction_it || '',
+      min_order_value: prizeToCopy.min_order_value || '',
+      min_order_value_en: prizeToCopy.min_order_value_en || '',
+      min_order_value_fr: prizeToCopy.min_order_value_fr || '',
+      min_order_value_it: prizeToCopy.min_order_value_it || '',
+      quantity: 10,
+      prefix: '',
+      custom_codes: '',
+      is_jackpot: prizeToCopy.is_jackpot === 1,
+      is_same_code: prizeToCopy.is_same_code === 1
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setAppAlert({ type: 'success', message: 'Preis kopiert! Bitte passe nun ggf. oben den Namen an, füge Codes im Feld ein und klicke auf "Preis anlegen".' });
   };
 
   const [prizeToDelete, setPrizeToDelete] = useState<number | null>(null);
@@ -455,9 +526,30 @@ export default function AdminPage() {
 
                   {/* CODES OPTIONS */}
                   <div className="bg-zinc-950/50 p-6 rounded-lg border border-zinc-800">
-                    <h3 className="font-bold text-red-500 mb-4 uppercase tracking-wider text-sm border-b border-red-900/30 pb-2">Preis Codes</h3>
-                    <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">1 Code pro Zeile</label>
-                    <textarea value={newPrize.custom_codes} onChange={e => setNewPrize({ ...newPrize, custom_codes: e.target.value })} className="w-full bg-zinc-950 border border-zinc-800 rounded px-4 py-2 text-white focus:outline-none focus:border-red-500 text-xs font-mono" placeholder="GUTSCHEIN-A11&#10;GUTSCHEIN-B22" rows={5} />
+                    <div className="flex justify-between items-center mb-4 border-b border-red-900/30 pb-2">
+                      <h3 className="font-bold text-red-500 uppercase tracking-wider text-sm">Preis Codes</h3>
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" checked={newPrize.is_same_code} onChange={e => setNewPrize({ ...newPrize, is_same_code: e.target.checked, custom_codes: '' })} className="w-4 h-4 accent-red-500 rounded border-zinc-700 bg-zinc-900" />
+                        <span className="text-sm font-bold text-zinc-400 uppercase tracking-wider">Same Code for all</span>
+                      </label>
+                    </div>
+                    {newPrize.is_same_code ? (
+                      <div className="flex gap-4">
+                        <div className="flex-1">
+                          <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">Gutscheincode</label>
+                          <input type="text" value={newPrize.custom_codes} onChange={e => setNewPrize({ ...newPrize, custom_codes: e.target.value })} className="w-full bg-zinc-950 border border-zinc-800 rounded px-4 py-2 text-white focus:outline-none focus:border-red-500 font-mono" placeholder="z.B. SUPER-RABATT" />
+                        </div>
+                        <div className="w-32">
+                          <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">Anzahl</label>
+                          <input type="number" min="1" value={newPrize.quantity} onChange={e => setNewPrize({ ...newPrize, quantity: parseInt(e.target.value) || 1 })} className="w-full bg-zinc-950 border border-zinc-800 rounded px-4 py-2 text-white focus:outline-none focus:border-red-500" />
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">1 Code pro Zeile</label>
+                        <textarea value={newPrize.custom_codes} onChange={e => setNewPrize({ ...newPrize, custom_codes: e.target.value })} className="w-full bg-zinc-950 border border-zinc-800 rounded px-4 py-2 text-white focus:outline-none focus:border-red-500 text-xs font-mono" placeholder="GUTSCHEIN-A11&#10;GUTSCHEIN-B22" rows={5} />
+                      </>
+                    )}
                   </div>
 
                   <button type="submit" className="w-full md:w-auto self-end flex items-center justify-center h-[50px] px-8 bg-white text-black hover:bg-zinc-200 rounded-lg font-bold uppercase tracking-widest transition-colors">
@@ -471,11 +563,16 @@ export default function AdminPage() {
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-6 pb-4 border-b border-zinc-800">
                   <div>
                     <h2 className="text-xl font-bold uppercase tracking-widest text-white mb-2">Alternativ: Preis & Code CSV-Import</h2>
-                    <p className="text-zinc-500 text-sm">Lade das Muster für alle benötigten Spalten inklusive Sprachvarianten (Name EN, Mailtext FR, etc.) herunter.</p>
+                    <p className="text-zinc-500 text-sm">Lade das Muster herunter oder exportiere alle bestehenden Preise inkl. Codes als CSV.</p>
                   </div>
-                  <button type="button" onClick={generateSampleCSV} className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors font-bold text-sm uppercase tracking-wider">
-                    <Download size={16} /> Muster herunterladen
-                  </button>
+                  <div className="flex gap-2 shrink-0">
+                    <button type="button" onClick={exportPrizes} className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg transition-colors font-bold text-sm uppercase tracking-wider">
+                      <Download size={16} /> Alle Preise exportieren
+                    </button>
+                    <button type="button" onClick={generateSampleCSV} className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors font-bold text-sm uppercase tracking-wider">
+                      Muster .csv
+                    </button>
+                  </div>
                 </div>
 
                 <div className="flex items-center gap-4">
@@ -538,10 +635,16 @@ export default function AdminPage() {
                                           <input type="text" value={editingPrize[`min_order_value${l}`] || ''} onChange={e => setEditingPrize({ ...editingPrize, [`min_order_value${l}`]: e.target.value })} className="w-48 bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-white text-sm" placeholder={`Mindestbest. (${editLang.toUpperCase()})`} />
                                         </div>
                                       </div>
-                                      <label className="flex items-center gap-3 cursor-pointer bg-zinc-900 border border-zinc-700 rounded px-4 py-3 w-48 shrink-0">
-                                        <input type="checkbox" checked={!!editingPrize.is_jackpot} onChange={e => setEditingPrize({ ...editingPrize, is_jackpot: e.target.checked })} className="w-5 h-5 accent-yellow-500 rounded border-zinc-700 bg-zinc-950" />
-                                        <span className="text-sm font-bold text-yellow-500 uppercase tracking-wider">Jackpot</span>
-                                      </label>
+                                      <div className="flex flex-col gap-3 shrink-0">
+                                        <label className="flex items-center gap-3 cursor-pointer bg-zinc-900 border border-zinc-700 rounded px-4 py-2 w-48">
+                                          <input type="checkbox" checked={!!editingPrize.is_jackpot} onChange={e => setEditingPrize({ ...editingPrize, is_jackpot: e.target.checked })} className="w-5 h-5 accent-yellow-500 rounded border-zinc-700 bg-zinc-950" />
+                                          <span className="text-sm font-bold text-yellow-500 uppercase tracking-wider">Jackpot</span>
+                                        </label>
+                                        <label className="flex items-center gap-3 cursor-pointer bg-zinc-900 border border-zinc-700 rounded px-4 py-2 w-48">
+                                          <input type="checkbox" checked={!!editingPrize.is_same_code} onChange={e => setEditingPrize({ ...editingPrize, is_same_code: e.target.checked })} className="w-5 h-5 accent-red-500 rounded border-zinc-700 bg-zinc-950" />
+                                          <span className="text-sm font-bold text-red-500 uppercase tracking-wider text-[11px]">Same Code</span>
+                                        </label>
+                                      </div>
                                     </div>
                                   </>
                                 );
@@ -567,12 +670,13 @@ export default function AdminPage() {
                             </td>
                             <td className="px-6 py-4">
                               <span className="text-zinc-500 mr-2 text-xs">Total: {prize.initial_quantity}</span>
-                              <span className={`px-3 py-1 rounded-full text-sm font-bold ${prize.remaining_quantity > 0 ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
-                                Verf: {prize.remaining_quantity}
+                              <span className={`px-3 py-1 rounded-full text-sm font-bold ${prize.remaining_quantity > 0 || prize.is_same_code ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                                Verf: {prize.is_same_code ? '∞' : prize.remaining_quantity}
                               </span>
                             </td>
                             <td className="px-6 py-4 text-right">
-                              <button title="Codes Anzeigen" onClick={() => setViewingCodesFor(prize)} className="p-2 text-zinc-400 hover:text-green-500 transition-colors mr-2"><Eye size={18} /></button>
+                              <button title="Preis duplizieren" onClick={() => handleCopyPrize(prize)} className="p-2 text-zinc-400 hover:text-blue-500 transition-colors mr-2"><Copy size={18} /></button>
+                              <button title="Codes verwalten" onClick={() => setViewingCodesFor(prize)} className="p-2 text-zinc-400 hover:text-green-500 transition-colors mr-2"><Ticket size={18} /></button>
                               <button title="Preis umbenennen" onClick={() => setEditingPrize(prize)} className="p-2 text-zinc-400 hover:text-white transition-colors"><Edit2 size={18} /></button>
                               <button title="Preis löschen" onClick={() => setPrizeToDelete(prize.id)} className="p-2 text-zinc-400 hover:text-red-500 transition-colors ml-2"><Trash2 size={18} /></button>
                             </td>
@@ -600,13 +704,14 @@ export default function AdminPage() {
                   <button
                     onClick={() => {
                       const csvContent = [
-                        ['Datum', 'Preis', 'Code', 'Name', 'E-Mail'],
+                        ['Datum', 'Preis', 'Code', 'Name', 'E-Mail', 'Newsletter'],
                         ...winners.map(w => [
                           new Date(w.won_at).toLocaleString('de-CH'),
                           w.prize_name || 'Unbekannt',
                           w.code,
                           w.user_name || '',
-                          w.user_email || ''
+                          w.user_email || '',
+                          w.newsletter ? 'Ja' : 'Nein'
                         ])
                       ].map(e => e.join(',')).join('\n');
 
@@ -630,6 +735,7 @@ export default function AdminPage() {
                         <th className="px-6 py-4 text-sm font-bold text-zinc-400 uppercase tracking-wider">Code</th>
                         <th className="px-6 py-4 text-sm font-bold text-zinc-400 uppercase tracking-wider">Name</th>
                         <th className="px-6 py-4 text-sm font-bold text-zinc-400 uppercase tracking-wider">E-Mail</th>
+                        <th className="px-6 py-4 text-sm font-bold text-zinc-400 uppercase tracking-wider text-center">Newsletter</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-zinc-800">
@@ -642,11 +748,16 @@ export default function AdminPage() {
                           <td className="px-6 py-4 font-mono text-red-400">{winner.code}</td>
                           <td className="px-6 py-4">{winner.user_name || '-'}</td>
                           <td className="px-6 py-4 text-zinc-400">{winner.user_email || '-'}</td>
+                          <td className="px-6 py-4 text-center">
+                            <span className={`text-xs px-2 py-1 rounded uppercase font-bold tracking-wider ${winner.newsletter ? 'bg-green-500/10 text-green-500' : 'bg-zinc-800 text-zinc-500'}`}>
+                              {winner.newsletter ? 'Ja' : 'Nein'}
+                            </span>
+                          </td>
                         </tr>
                       ))}
                       {winners.length === 0 && (
                         <tr>
-                          <td colSpan={5} className="px-6 py-8 text-center text-zinc-500">Noch keine Gewinner.</td>
+                          <td colSpan={6} className="px-6 py-8 text-center text-zinc-500">Noch keine Gewinner.</td>
                         </tr>
                       )}
                     </tbody>
@@ -687,36 +798,13 @@ export default function AdminPage() {
       }
       {/* CODES VIEW MODAL */}
       {
-        viewingCodesFor && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
-            <div className="w-full max-w-lg bg-zinc-950 border border-zinc-700 flex flex-col max-h-[80vh]">
-              <div className="p-6 border-b border-zinc-800 flex justify-between items-center bg-zinc-900">
-                <div>
-                  <h3 className="text-xl font-bold uppercase tracking-widest text-white">Codes für '{viewingCodesFor.name}'</h3>
-                  <p className="text-sm text-zinc-500 mt-1">Total: {viewingCodesFor.codes_list?.length || 0} Codes</p>
-                </div>
-                <button onClick={() => setViewingCodesFor(null)} className="p-2 text-zinc-400 hover:text-white transition-colors bg-zinc-800 hover:bg-zinc-700 rounded-lg">
-                  <X size={20} />
-                </button>
-              </div>
-              <div className="p-6 overflow-y-auto bg-zinc-950 font-mono text-sm leading-relaxed text-zinc-300">
-                {viewingCodesFor.codes_list?.length > 0 ? (
-                  <ul className="space-y-2">
-                    {viewingCodesFor.codes_list.map((c: any, i: number) => (
-                      <li key={i} className="flex justify-between items-center border-b border-zinc-800 pb-2 last:border-0 last:pb-0">
-                        <span className={`${c.is_used ? 'text-zinc-600 line-through' : 'text-green-500 font-bold'}`}>{c.code}</span>
-                        <span className={`text-xs px-2 py-1 uppercase tracking-wider font-bold rounded ${c.is_used ? 'bg-red-500/10 text-red-500 border border-red-500/30' : 'bg-green-500/10 text-green-500 border border-green-500/30'}`}>
-                          {c.is_used ? 'Eingelöst' : 'Offen'}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <div className="text-center text-zinc-500 py-8 uppercase tracking-widest text-xs font-bold">Keine Codes vorhanden.</div>
-                )}
-              </div>
-            </div>
-          </div>
+        viewingCodesFor && authToken && (
+          <CodeManagerModal
+            prize={viewingCodesFor}
+            authToken={authToken}
+            onClose={() => setViewingCodesFor(null)}
+            onChanged={fetchData}
+          />
         )
       }
 

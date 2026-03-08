@@ -49,41 +49,87 @@ export default function WheelPage() {
       if (localizedPrizes.length > 0) {
         const sorted = [...localizedPrizes].sort((a, b) => (a.weight || 1) - (b.weight || 1));
         const TOTAL_SLOTS = 18;
-
-        // Find if there is a jackpot prize among available prizes
         const jackpotPrize = sorted.find(p => p.is_jackpot);
-        // All others
-        const regularPrizes = sorted.filter(p => !p.is_jackpot);
 
-        // If there are no regular prizes, just use the jackpot or whatever we have
-        const poolToUse = regularPrizes.length > 0 ? regularPrizes : sorted;
+        let poolItems = sorted.map(p => ({
+          prize: p,
+          count: 1, // Minimum 1 slot per prize to ensure visibility
+          weight: p.weight || 1,
+          is_jackpot: p.is_jackpot
+        }));
 
-        const slots: any[] = [];
+        // Cap any generic prize to half the wheel to prevent unavoidable adjacencies
+        const MAX_PER_PRIZE = Math.floor(TOTAL_SLOTS / 2); // 9
 
-        // Fill slots with available distinct prizes
-        for (let i = 0; i < poolToUse.length && slots.length < TOTAL_SLOTS; i++) {
-          slots.push(poolToUse[i]);
+        let unassigned = TOTAL_SLOTS - poolItems.length;
+        if (unassigned < 0) {
+          // Too many distinct prizes, cull lowest weighted ones
+          const jp = poolItems.find(p => p.is_jackpot);
+          const regs = poolItems.filter(p => !p.is_jackpot).sort((a, b) => b.weight - a.weight);
+          poolItems = jp ? [jp, ...regs.slice(0, TOTAL_SLOTS - 1)] : regs.slice(0, TOTAL_SLOTS);
+          unassigned = 0;
         }
 
-        // Fill remaining slots with the highest probability prize (usually Trostpreis)
-        const trostPrize = poolToUse[poolToUse.length - 1];
-        while (slots.length < TOTAL_SLOTS) {
-          slots.push(trostPrize);
+        // Proportional distribution (D'Hondt method) based on weights
+        while (unassigned > 0) {
+          // Jackpot slots are locked at 1, others distribute proportionally
+          const validItems = poolItems.filter(i => !i.is_jackpot && i.count < MAX_PER_PRIZE);
+          if (validItems.length === 0) break;
+
+          let bestItem = validItems[0];
+          let bestScore = -1;
+          for (const item of validItems) {
+            const score = item.weight / (item.count + 1); // D'Hondt divisor
+            if (score > bestScore) {
+              bestScore = score;
+              bestItem = item;
+            }
+          }
+          bestItem.count++;
+          unassigned--;
         }
 
-        // Randomly shuffle to spread out the Trostpreise (excluding jackpot, which isn't in this list yet)
-        for (let i = slots.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [slots[i], slots[j]] = [slots[j], slots[i]];
+        if (unassigned > 0) {
+          // Failsafe: if there are fewer than 2 active regular prizes, 
+          // capping at 9 left extra slots. We just forcefully allocate them to whatever's valid.
+          const validItems = poolItems.filter(i => !i.is_jackpot);
+          if (validItems.length > 0) {
+            validItems[0].count += unassigned;
+          }
         }
 
-        // If we have a jackpot prize, force it into the Golden Slice position
-        // The golden slice is index 2 (40-60 degrees from top)
+        // Space out to prevent identical prizes from sitting neatly side-by-side
+        poolItems.sort((a, b) => b.count - a.count);
+
+        const rawSlots = new Array(TOTAL_SLOTS).fill(null);
+        const placementSequence = [];
+        // Fill Evens then fill Odds (0, 2, 4... then 1, 3, 5...)
+        // This ensures items with count <= 9 will NEVER touch their duplicates
+        for (let i = 0; i < TOTAL_SLOTS; i += 2) placementSequence.push(i);
+        for (let i = 1; i < TOTAL_SLOTS; i += 2) placementSequence.push(i);
+
+        let seqIdx = 0;
+        for (const item of poolItems) {
+          for (let i = 0; i < item.count; i++) {
+            rawSlots[placementSequence[seqIdx]] = item.prize;
+            seqIdx++;
+          }
+        }
+
+        // Find Jackpot and rotate the entire wheel so it lands precisely on index 2 (the golden zone)
+        let finalSlots = [...rawSlots];
         if (jackpotPrize) {
-          slots[2] = jackpotPrize;
+          const jpIndex = rawSlots.findIndex(p => p.id === jackpotPrize.id);
+          if (jpIndex !== -1) {
+            const rotation = (2 - jpIndex + TOTAL_SLOTS) % TOTAL_SLOTS;
+            finalSlots = new Array(TOTAL_SLOTS);
+            for (let i = 0; i < TOTAL_SLOTS; i++) {
+              finalSlots[(i + rotation) % TOTAL_SLOTS] = rawSlots[i];
+            }
+          }
         }
 
-        setWheelPrizes(slots.slice(0, TOTAL_SLOTS));
+        setWheelPrizes(finalSlots);
       } else {
         setWheelPrizes([]);
       }

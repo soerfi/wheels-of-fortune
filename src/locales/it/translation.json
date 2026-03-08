@@ -8,8 +8,9 @@
         "no_sessions": "Al momento la ruota non ha sessioni attive programmate.",
         "already_spun": "Hai già girato!",
         "already_spun_desc": "Hai già tentato la fortuna. Torna al prossimo giro!",
-        "all_gone": "Tutto esaurito!",
-        "all_gone_desc": "Tutti i premi sono già stati vinti. Resta sintonizzato per il prossimo giro!"
+        "all_gone": "Tutto finito!",
+        "all_gone_desc": "Tutti i premi sono già stati vinti. Resta sintonizzato per il prossimo round!",
+        "disclaimer": "Possono partecipare solo persone residenti in Svizzera. I premi verranno spediti esclusivamente in Svizzera. Le vie legali sono escluse. Cliccando su «SPIN NOW!» accetti questi termini."
     },
     "modal": {
         "title": "WOOHOO! HAI VINTO!",

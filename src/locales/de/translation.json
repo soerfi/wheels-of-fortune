@@ -9,7 +9,8 @@
         "already_spun": "Schon gedreht!",
         "already_spun_desc": "Du hast dein Glück bereits versucht. Komm bei der nächsten Runde wieder vorbei!",
         "all_gone": "Alles abgeräumt!",
-        "all_gone_desc": "Alle Preise wurden bereits gewonnen. Stay tuned für die nächste Runde!"
+        "all_gone_desc": "Alle Preise wurden bereits gewonnen. Stay tuned für die nächste Runde!",
+        "disclaimer": "Teilnahmeberechtigt sind nur Personen mit Wohnsitz in der Schweiz. Preise werden ausschliesslich in die Schweiz versendet. Der Rechtsweg ist ausgeschlossen. Mit dem Klick auf «SPIN NOW!» erklärst du dich damit einverstanden."
     },
     "modal": {
         "title": "WOOHOO! DU HAST GEWONNEN!",

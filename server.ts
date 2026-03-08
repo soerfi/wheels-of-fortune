@@ -28,7 +28,8 @@ async function startServer() {
     crossOriginEmbedderPolicy: false,
   }));
   app.use(cors());
-  app.use(express.json());
+  app.use(express.json({ limit: '50mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
   // Rate Limiting
   const spinLimiter = rateLimit({
@@ -170,7 +171,7 @@ async function startServer() {
       mail_description, mail_description_en, mail_description_fr, mail_description_it,
       mail_instruction, mail_instruction_en, mail_instruction_fr, mail_instruction_it,
       min_order_value, min_order_value_en, min_order_value_fr, min_order_value_it,
-      quantity, prefix, custom_codes, value, weight, is_jackpot
+      quantity, prefix, custom_codes, value, weight, is_jackpot, is_same_code
     } = req.body;
 
     let insertId;
@@ -184,24 +185,28 @@ async function startServer() {
           mail_description, mail_description_en, mail_description_fr, mail_description_it, 
           mail_instruction, mail_instruction_en, mail_instruction_fr, mail_instruction_it, 
           min_order_value, min_order_value_en, min_order_value_fr, min_order_value_it,
-          value, weight, is_jackpot
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+          value, weight, is_jackpot, is_same_code
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
           name, name_en || '', name_fr || '', name_it || '',
           color || '#EF4444',
           description || '', description_en || '', description_fr || '', description_it || '',
           mail_description || '', mail_description_en || '', mail_description_fr || '', mail_description_it || '',
           mail_instruction || '', mail_instruction_en || '', mail_instruction_fr || '', mail_instruction_it || '',
           min_order_value || '', min_order_value_en || '', min_order_value_fr || '', min_order_value_it || '',
-          value || '', weight || 1, is_jackpot ? 1 : 0
+          value || '', weight || 1, is_jackpot ? 1 : 0, is_same_code ? 1 : 0
         );
         insertId = result.lastInsertRowid;
 
         // 2. Insert custom codes if provided
         if (custom_codes && Array.isArray(custom_codes) && custom_codes.some(c => c.trim() !== '')) {
           const insertCode = db.prepare('INSERT INTO prize_codes (prize_id, code, value) VALUES (?, ?, ?)');
+          const checkCode = db.prepare('SELECT id FROM prize_codes WHERE LOWER(code) = LOWER(?)');
+
           for (const codeStr of custom_codes) {
             if (typeof codeStr === 'string' && codeStr.trim() !== '') {
-              insertCode.run(insertId, codeStr.trim(), null);
+              const code = codeStr.trim();
+              if (!is_same_code && checkCode.get(code)) continue;
+              insertCode.run(insertId, code, null);
             }
           }
         }
@@ -222,7 +227,7 @@ async function startServer() {
       mail_description, mail_description_en, mail_description_fr, mail_description_it,
       mail_instruction, mail_instruction_en, mail_instruction_fr, mail_instruction_it,
       min_order_value, min_order_value_en, min_order_value_fr, min_order_value_it,
-      add_quantity, prefix, custom_codes, value, weight, is_jackpot
+      add_quantity, prefix, custom_codes, value, weight, is_jackpot, is_same_code
     } = req.body;
     const prizeId = req.params.id;
 
@@ -236,7 +241,7 @@ async function startServer() {
           mail_description = ?, mail_description_en = ?, mail_description_fr = ?, mail_description_it = ?, 
           mail_instruction = ?, mail_instruction_en = ?, mail_instruction_fr = ?, mail_instruction_it = ?, 
           min_order_value = ?, min_order_value_en = ?, min_order_value_fr = ?, min_order_value_it = ?,
-          value = ?, weight = ?, is_jackpot = ? 
+          value = ?, weight = ?, is_jackpot = ?, is_same_code = ?
           WHERE id = ?`).run(
           name, name_en || '', name_fr || '', name_it || '',
           color || '#EF4444',
@@ -244,15 +249,19 @@ async function startServer() {
           mail_description || '', mail_description_en || '', mail_description_fr || '', mail_description_it || '',
           mail_instruction || '', mail_instruction_en || '', mail_instruction_fr || '', mail_instruction_it || '',
           min_order_value || '', min_order_value_en || '', min_order_value_fr || '', min_order_value_it || '',
-          value || '', weight || 1, is_jackpot ? 1 : 0, prizeId
+          value || '', weight || 1, is_jackpot ? 1 : 0, is_same_code ? 1 : 0, prizeId
         );
 
         // 2. Add custom codes if provided
         if (custom_codes && Array.isArray(custom_codes) && custom_codes.length > 0) {
           const insertCode = db.prepare('INSERT INTO prize_codes (prize_id, code, value) VALUES (?, ?, ?)');
+          const checkCode = db.prepare('SELECT id FROM prize_codes WHERE LOWER(code) = LOWER(?)');
+
           for (const codeStr of custom_codes) {
             if (typeof codeStr === 'string' && codeStr.trim() !== '') {
-              insertCode.run(prizeId, codeStr.trim(), null);
+              const code = codeStr.trim();
+              if (!is_same_code && checkCode.get(code)) continue;
+              insertCode.run(prizeId, code, null);
             }
           }
         }
@@ -300,7 +309,7 @@ async function startServer() {
               p.mail_description !== undefined || p.mail_description_en !== undefined || p.mail_description_fr !== undefined || p.mail_description_it !== undefined ||
               p.mail_instruction !== undefined || p.mail_instruction_en !== undefined || p.mail_instruction_fr !== undefined || p.mail_instruction_it !== undefined ||
               p.name_en !== undefined || p.name_fr !== undefined || p.name_it !== undefined ||
-              p.value !== undefined || p.weight !== undefined || p.is_jackpot !== undefined
+              p.value !== undefined || p.weight !== undefined || p.is_jackpot !== undefined || p.is_same_code !== undefined
             ) {
               db.prepare(`UPDATE prizes SET 
                 name_en = coalesce(?, name_en), name_fr = coalesce(?, name_fr), name_it = coalesce(?, name_it),
@@ -309,7 +318,7 @@ async function startServer() {
                 mail_description = coalesce(?, mail_description), mail_description_en = coalesce(?, mail_description_en), mail_description_fr = coalesce(?, mail_description_fr), mail_description_it = coalesce(?, mail_description_it),
                 mail_instruction = coalesce(?, mail_instruction), mail_instruction_en = coalesce(?, mail_instruction_en), mail_instruction_fr = coalesce(?, mail_instruction_fr), mail_instruction_it = coalesce(?, mail_instruction_it),
                 min_order_value = coalesce(?, min_order_value), min_order_value_en = coalesce(?, min_order_value_en), min_order_value_fr = coalesce(?, min_order_value_fr), min_order_value_it = coalesce(?, min_order_value_it),
-                value = coalesce(?, value), weight = coalesce(?, weight), is_jackpot = coalesce(?, is_jackpot) WHERE id = ?`)
+                value = coalesce(?, value), weight = coalesce(?, weight), is_jackpot = coalesce(?, is_jackpot), is_same_code = coalesce(?, is_same_code) WHERE id = ?`)
                 .run(
                   p.name_en || null, p.name_fr || null, p.name_it || null,
                   p.color || null,
@@ -317,7 +326,7 @@ async function startServer() {
                   p.mail_description || null, p.mail_description_en || null, p.mail_description_fr || null, p.mail_description_it || null,
                   p.mail_instruction || null, p.mail_instruction_en || null, p.mail_instruction_fr || null, p.mail_instruction_it || null,
                   p.min_order_value || null, p.min_order_value_en || null, p.min_order_value_fr || null, p.min_order_value_it || null,
-                  p.value || null, p.weight || null, p.is_jackpot !== undefined ? (p.is_jackpot ? 1 : 0) : null, prizeId
+                  p.value || null, p.weight || null, p.is_jackpot !== undefined ? (p.is_jackpot ? 1 : 0) : null, p.is_same_code !== undefined ? (p.is_same_code ? 1 : 0) : null, prizeId
                 );
             }
           } else {
@@ -328,8 +337,8 @@ async function startServer() {
               mail_description, mail_description_en, mail_description_fr, mail_description_it,
               mail_instruction, mail_instruction_en, mail_instruction_fr, mail_instruction_it,
               min_order_value, min_order_value_en, min_order_value_fr, min_order_value_it,
-              value, weight, is_jackpot
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+              value, weight, is_jackpot, is_same_code
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
               .run(
                 p.name, p.name_en || '', p.name_fr || '', p.name_it || '',
                 p.color || '#EF4444',
@@ -337,17 +346,21 @@ async function startServer() {
                 p.mail_description || '', p.mail_description_en || '', p.mail_description_fr || '', p.mail_description_it || '',
                 p.mail_instruction || '', p.mail_instruction_en || '', p.mail_instruction_fr || '', p.mail_instruction_it || '',
                 p.min_order_value || '', p.min_order_value_en || '', p.min_order_value_fr || '', p.min_order_value_it || '',
-                p.value || '', p.weight || 1, p.is_jackpot ? 1 : 0
+                p.value || '', p.weight || 1, p.is_jackpot ? 1 : 0, p.is_same_code ? 1 : 0
               );
             prizeId = insertResult.lastInsertRowid;
           }
 
           // Insert codes
           if (p.codes && Array.isArray(p.codes)) {
-            const insertCode = db.prepare('INSERT OR IGNORE INTO prize_codes (prize_id, code, value) VALUES (?, ?, ?)');
-            for (const code of p.codes) {
-              if (code && typeof code === 'string' && code.trim() !== '') {
-                insertCode.run(prizeId, code.trim(), null);
+            const insertCode = db.prepare('INSERT INTO prize_codes (prize_id, code, value) VALUES (?, ?, ?)');
+            const checkCode = db.prepare('SELECT id FROM prize_codes WHERE LOWER(code) = LOWER(?)');
+
+            for (const codeStr of p.codes) {
+              if (codeStr && typeof codeStr === 'string' && codeStr.trim() !== '') {
+                const code = codeStr.trim();
+                if (!p.is_same_code && checkCode.get(code)) continue;
+                insertCode.run(prizeId, code, null);
               }
             }
           }
@@ -357,6 +370,88 @@ async function startServer() {
     } catch (e) {
       console.error(e);
       res.status(500).json({ error: 'Import failed' });
+    }
+  });
+
+  // Get codes for a prize
+  app.get('/api/prizes/:id/codes', checkAdminAuth, (req, res) => {
+    try {
+      const codes = db.prepare('SELECT * FROM prize_codes WHERE prize_id = ? ORDER BY is_used ASC, id DESC').all(req.params.id);
+      res.json(codes);
+    } catch (e) {
+      res.status(500).json({ error: 'Failed to fetch codes' });
+    }
+  });
+
+  // Edit a specific code
+  app.put('/api/codes/:id', checkAdminAuth, (req, res) => {
+    try {
+      const codeStr = req.body.code?.trim();
+      if (!codeStr) return res.status(400).json({ error: 'Empty code' });
+
+      const existing = db.prepare('SELECT is_used, prize_id FROM prize_codes WHERE id = ?').get(req.params.id) as any;
+      if (!existing) return res.status(404).json({ error: 'Code not found' });
+      if (existing.is_used === 1) return res.status(400).json({ error: 'Cannot edit locked (used) code' });
+
+      // Check for duplicate if not universal code
+      const prize = db.prepare('SELECT is_same_code FROM prizes WHERE id = ?').get(existing.prize_id) as any;
+      if (!prize.is_same_code) {
+        const dup = db.prepare('SELECT id FROM prize_codes WHERE LOWER(code) = LOWER(?) AND id != ?').get(codeStr, req.params.id);
+        if (dup) return res.status(400).json({ error: 'Dieser Code existiert bereits im System.' });
+      }
+
+      db.prepare('UPDATE prize_codes SET code = ? WHERE id = ?').run(codeStr, req.params.id);
+      res.json({ success: true });
+    } catch (e) {
+      res.status(500).json({ error: 'Failed' });
+    }
+  });
+
+  // Delete a specific code
+  app.delete('/api/codes/:id', checkAdminAuth, (req, res) => {
+    try {
+      const existing = db.prepare('SELECT is_used FROM prize_codes WHERE id = ?').get(req.params.id) as any;
+      if (!existing) return res.status(404).json({ error: 'Code not found' });
+      if (existing.is_used === 1) return res.status(400).json({ error: 'Cannot delete locked (used) code' });
+
+      db.prepare('DELETE FROM prize_codes WHERE id = ?').run(req.params.id);
+      res.json({ success: true });
+    } catch (e) {
+      res.status(500).json({ error: 'Failed' });
+    }
+  });
+
+  // Add new codes to a prize
+  app.post('/api/prizes/:id/codes', checkAdminAuth, (req, res) => {
+    try {
+      const codes = req.body.codes; // Array of strings
+      if (!codes || !Array.isArray(codes)) return res.status(400).json({ error: 'Invalid payload' });
+
+      const prize = db.prepare('SELECT is_same_code FROM prizes WHERE id = ?').get(req.params.id) as any;
+      if (!prize) return res.status(404).json({ error: 'Prize not found' });
+
+      const insertCode = db.prepare('INSERT INTO prize_codes (prize_id, code, value) VALUES (?, ?, ?)');
+      const checkCode = db.prepare('SELECT id FROM prize_codes WHERE LOWER(code) = LOWER(?)');
+
+      let addedCount = 0;
+      let skippedCount = 0;
+      db.transaction(() => {
+        for (const c of codes) {
+          const codeStr = typeof c === 'string' ? c.trim() : '';
+          if (codeStr !== '') {
+            if (!prize.is_same_code && checkCode.get(codeStr)) {
+              skippedCount++;
+              continue;
+            }
+            insertCode.run(req.params.id, codeStr, null);
+            addedCount++;
+          }
+        }
+      })();
+
+      res.json({ success: true, added: addedCount, skipped: skippedCount });
+    } catch (e) {
+      res.status(500).json({ error: 'Failed' });
     }
   });
 
@@ -418,7 +513,9 @@ async function startServer() {
         const codeRow = db.prepare('SELECT id, code FROM prize_codes WHERE prize_id = ? AND is_used = 0 LIMIT 1').get(winningPrize.id) as { id: number, code: string };
         if (!codeRow) throw new Error('Race condition');
 
-        db.prepare('UPDATE prize_codes SET is_used = 1 WHERE id = ?').run(codeRow.id);
+        if (!winningPrize.is_same_code) {
+          db.prepare('UPDATE prize_codes SET is_used = 1 WHERE id = ?').run(codeRow.id);
+        }
 
         const insertResult = db.prepare('INSERT INTO winners (prize_id, code, won_at) VALUES (?, ?, ?)')
           .run(winningPrize.id, codeRow.code, new Date().toISOString());
@@ -613,6 +710,20 @@ async function startServer() {
     }
 
     res.json({ success: true });
+  });
+
+  app.get('/api/admin/export-prizes', checkAdminAuth, (req, res) => {
+    try {
+      const prizes = db.prepare(`SELECT * FROM prizes ORDER BY id ASC`).all();
+      const result = prizes.map((p: any) => {
+        const codes = db.prepare(`SELECT code FROM prize_codes WHERE prize_id = ?`).all(p.id).map((r: any) => r.code);
+        return { ...p, codes };
+      });
+      res.json(result);
+    } catch (error) {
+      console.error('Export prizes error:', error);
+      res.status(500).json({ error: 'Failed to export prizes' });
+    }
   });
 
   app.get('/api/winners', checkAdminAuth, (req, res) => {

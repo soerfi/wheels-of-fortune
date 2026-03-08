@@ -7,9 +7,10 @@
         "paused_desc": "La roue est actuellement en pause. La prochaine session commence bientôt !",
         "no_sessions": "La roue n'a pas de sessions actives prévues pour le moment.",
         "already_spun": "Déjà tourné !",
-        "already_spun_desc": "Vous avez déjà tenté votre chance. Revenez à la prochaine session !",
-        "all_gone": "Tout est parti !",
-        "all_gone_desc": "Tous les prix ont déjà été gagnés. Restez à l'écoute pour la prochaine session !"
+        "already_spun_desc": "Vous avez déjà tenté votre chance. Revenez au prochain tour !",
+        "all_gone": "Plus rien !",
+        "all_gone_desc": "Tous les prix ont déjà été gagnés. Restez à l'écoute pour le prochain tour !",
+        "disclaimer": "Seules les personnes résidant en Suisse sont autorisées à participer. Les prix seront expédiés uniquement en Suisse. Tout recours juridique est exclu. En cliquant sur « SPIN NOW ! », vous acceptez ces conditions."
     },
     "modal": {
         "title": "WOOHOO ! VOUS AVEZ GAGNÉ !",

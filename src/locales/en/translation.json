@@ -9,7 +9,8 @@
         "already_spun": "Already spun!",
         "already_spun_desc": "You have already tried your luck. Come back next round!",
         "all_gone": "All gone!",
-        "all_gone_desc": "All prizes have already been won. Stay tuned for the next round!"
+        "all_gone_desc": "All prizes have already been won. Stay tuned for the next round!",
+        "disclaimer": "Only residents of Switzerland are eligible to participate. Prizes will only be shipped to Switzerland. Legal recourse is excluded. By clicking «SPIN NOW!» you agree to these terms."
     },
     "modal": {
         "title": "WOOHOO! YOU WON!",

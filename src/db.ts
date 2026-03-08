@@ -37,15 +37,19 @@ db.exec(`
     mail_instruction_en TEXT DEFAULT "",
     mail_instruction_fr TEXT DEFAULT "",
     mail_instruction_it TEXT DEFAULT "",
-    value TEXT DEFAULT "",
+    min_order_value TEXT DEFAULT "",
+    min_order_value_en TEXT DEFAULT "",
+    min_order_value_fr TEXT DEFAULT "",
+    min_order_value_it TEXT DEFAULT "",
     weight INTEGER DEFAULT 1,
-    is_jackpot INTEGER DEFAULT 0
+    is_jackpot INTEGER DEFAULT 0,
+    is_same_code INTEGER DEFAULT 0
   );
 
   CREATE TABLE IF NOT EXISTS prize_codes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     prize_id INTEGER NOT NULL,
-    code TEXT NOT NULL UNIQUE,
+    code TEXT NOT NULL,
     value TEXT,
     is_used INTEGER DEFAULT 0,
     FOREIGN KEY(prize_id) REFERENCES prizes(id) ON DELETE CASCADE
@@ -112,6 +116,10 @@ try {
 try {
   db.exec('ALTER TABLE prizes ADD COLUMN mail_description TEXT DEFAULT "";');
   db.exec('ALTER TABLE prizes ADD COLUMN mail_instruction TEXT DEFAULT "";');
+} catch (e) { }
+
+try {
+  db.exec('ALTER TABLE prizes ADD COLUMN is_same_code INTEGER DEFAULT 0;');
 } catch (e) { }
 
 try {

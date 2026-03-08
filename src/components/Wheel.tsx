@@ -38,6 +38,35 @@ function truncateLabel(label: string, maxLength: number): string {
     return trimmed.length > maxLength ? `${trimmed.slice(0, maxLength)}..` : trimmed;
 }
 
+function calculateFontSize(label: string, maxLength: number): number {
+    const trimmed = label.trim().toUpperCase();
+    if (trimmed.length <= 12) return 3.2;
+    if (trimmed.length <= 16) return 2.8;
+    if (trimmed.length <= 22) return 2.4;
+    return 2.0;
+}
+
+// Generates an SVG pie slice path
+function describeArc(x: number, y: number, radius: number, startAngle: number, endAngle: number) {
+    const start = polarToCartesian(x, y, radius, endAngle);
+    const end = polarToCartesian(x, y, radius, startAngle);
+    const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
+    return [
+        "M", x, y,
+        "L", start.x, start.y,
+        "A", radius, radius, 0, largeArcFlag, 0, end.x, end.y,
+        "Z"
+    ].join(" ");
+}
+
+function polarToCartesian(centerX: number, centerY: number, radius: number, angleInDegrees: number) {
+    const angleInRadians = (angleInDegrees - 90) * Math.PI / 180.0;
+    return {
+        x: centerX + (radius * Math.cos(angleInRadians)),
+        y: centerY + (radius * Math.sin(angleInRadians))
+    };
+}
+
 export default function Wheel({ prizes, onSpin, onSpinComplete }: WheelProps) {
     const { t } = useTranslation();
     const [isSpinning, setIsSpinning] = useState(false);
@@ -52,7 +81,7 @@ export default function Wheel({ prizes, onSpin, onSpinComplete }: WheelProps) {
         [numPrizes]
     );
 
-    const labelMaxLength = numPrizes > 12 ? 10 : 18;
+    const labelMaxLength = numPrizes > 12 ? 14 : 26;
 
     const wheelRotate = useTransform(rotateX, (value) => value - 90);
 
@@ -159,27 +188,23 @@ export default function Wheel({ prizes, onSpin, onSpinComplete }: WheelProps) {
 
     return (
         <div className="relative flex flex-col items-center select-none pt-12 md:pt-16 max-w-full">
-            <div className="relative w-[300px] h-[300px] sm:w-[350px] sm:h-[350px] md:w-[500px] md:h-[500px]">
+            <div className="relative w-[300px] h-[300px] sm:w-[350px] sm:h-[350px] md:w-[600px] md:h-[600px]">
                 <div className="absolute inset-0 z-30 pointer-events-none" style={{ transform: 'rotate(-10deg)' }}>
                     <div
                         className="absolute top-1/2 left-[calc(-20%+10px)] md:left-[calc(-25%+10px)] -translate-y-1/2 -mt-[10px] drop-shadow-xl pointer-events-auto"
                         style={{ transformOrigin: '50% 50%' }}
                     >
                         <motion.div style={{ rotate: pointerRotate, transformOrigin: '50% 50%' }} className="flex items-center">
-                            <img src="/Soerfi-Needle.png" alt="Skater Pin" className="w-24 md:w-32 object-contain" />
+                            <img src="/Soerfi-Needle.png" alt="Skater Pin" className="w-24 md:w-40 object-contain" />
                         </motion.div>
                     </div>
                 </div>
 
                 <div className="absolute inset-0 rounded-full bg-[#b51401] shadow-[0_15px_35px_rgba(0,0,0,0.3)] flex items-center justify-center">
                     <motion.div
-                        className="w-[96%] h-[96%] rounded-full overflow-hidden bg-zinc-900 shadow-inner"
+                        className="w-[96%] h-[96%] rounded-full overflow-hidden bg-[#18181A] shadow-inner"
                         style={{
                             rotate: wheelRotate,
-                            backgroundImage: 'url(/Wheel-of-Fortune.svg)',
-                            backgroundSize: '100% 100%',
-                            backgroundPosition: 'center',
-                            backgroundRepeat: 'no-repeat'
                         }}
                     >
                         <svg viewBox="0 0 100 100" className="w-full h-full overflow-visible">
@@ -187,11 +212,61 @@ export default function Wheel({ prizes, onSpin, onSpinComplete }: WheelProps) {
                                 <filter id="text-shadow" x="-20%" y="-20%" width="140%" height="140%">
                                     <feDropShadow dx="0.5" dy="0.5" stdDeviation="1" floodColor="#000000" floodOpacity="0.8" />
                                 </filter>
+
+                                {/* Grunge brush stroke filter for the slice inner edges to simulate handdrawn style */}
+                                <filter id="grunge" x="-20%" y="-20%" width="140%" height="140%">
+                                    <feTurbulence type="fractalNoise" baseFrequency="0.08" numOctaves="4" result="noise" />
+                                    <feDisplacementMap in="SourceGraphic" in2="noise" scale="0.6" xChannelSelector="R" yChannelSelector="G" />
+                                </filter>
+
+                                {/* Inner shadow for depth */}
+                                <radialGradient id="sliceFade" cx="50" cy="50" r="50" gradientUnits="userSpaceOnUse">
+                                    <stop offset="60%" stopColor="#ffffff" stopOpacity="0" />
+                                    <stop offset="98%" stopColor="#000000" stopOpacity="0.3" />
+                                    <stop offset="100%" stopColor="#000000" stopOpacity="0.8" />
+                                </radialGradient>
                             </defs>
 
+                            {/* Background base */}
+                            <circle cx="50" cy="50" r="50" fill="#18181A" />
+
+                            {/* Colored Slices */}
+                            {prizes.map((prize, index) => {
+                                const startAngle = index * sliceAngle + POINTER_ALIGNMENT_OFFSET;
+                                const endAngle = (index + 1) * sliceAngle + POINTER_ALIGNMENT_OFFSET;
+                                // Automatically alternate colors to match the user's provided Wheel-of-Fortune.svg palette
+                                // Red (#DF1C1F), Dark Slate (#253D47), Light Grey (#D1CCC7), Gold for Jackpot (#CBA135)
+                                let sliceColor = '';
+                                if (prize.is_jackpot) {
+                                    sliceColor = '#CBA135'; // Gold
+                                } else {
+                                    const colors = ['#DF1C1F', '#253D47', '#D1CCC7'];
+                                    sliceColor = colors[index % colors.length];
+                                }
+
+                                const pathData = describeArc(50, 50, 50, startAngle, endAngle);
+
+                                return (
+                                    <g key={`slice-${index}`}>
+                                        <path
+                                            d={pathData}
+                                            fill={sliceColor}
+                                            filter="url(#grunge)"
+                                            stroke="none"
+                                        />
+                                        <path
+                                            d={pathData}
+                                            fill="url(#sliceFade)"
+                                        />
+                                    </g>
+                                );
+                            })}
+
+                            {/* Pins and Text overlay */}
                             {prizes.map((prize, index) => {
                                 const midAngle = index * sliceAngle + sliceAngle / 2;
                                 const displayName = truncateLabel(prize.name, labelMaxLength);
+                                const currentFontSize = calculateFontSize(prize.name, labelMaxLength);
 
                                 return (
                                     <g key={`${prize.id}-${index}`}>
@@ -203,21 +278,22 @@ export default function Wheel({ prizes, onSpin, onSpinComplete }: WheelProps) {
                                             stroke="#ffffff"
                                             strokeWidth="1.5"
                                             strokeLinecap="round"
-                                            transform={`rotate(${index * sliceAngle + POINTER_ALIGNMENT_OFFSET}, 50, 50) translate(50, 0)`}
+                                            transform={`rotate(${index * sliceAngle + POINTER_ALIGNMENT_OFFSET - 90}, 50, 50) translate(50, 0)`}
                                         />
 
                                         <text
                                             x="6"
-                                            y="51.5"
+                                            y="50"
                                             fill="#ffffff"
                                             filter="url(#text-shadow)"
                                             stroke="none"
-                                            fontSize={3.2}
+                                            fontSize={currentFontSize}
                                             fontFamily="system-ui, -apple-system, sans-serif"
                                             fontWeight="600"
                                             letterSpacing="0.05em"
                                             textAnchor="start"
-                                            transform={`rotate(${midAngle + POINTER_ALIGNMENT_OFFSET - 180}, 50, 50)`}
+                                            dominantBaseline="central"
+                                            transform={`rotate(${midAngle + POINTER_ALIGNMENT_OFFSET - 270}, 50, 50)`}
                                         >
                                             {displayName}
                                         </text>
@@ -226,6 +302,13 @@ export default function Wheel({ prizes, onSpin, onSpinComplete }: WheelProps) {
                             })}
                         </svg>
                     </motion.div>
+
+                    {/* Fixed Logo in the center (does not rotate) */}
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none drop-shadow-2xl">
+                        <div className="w-[18%] h-[18%] bg-[#18181A] rounded-full shadow-lg flex items-center justify-center p-2 border-[2px] border-[#333]">
+                            <img src="/wing-logo.png" alt="2S Skate Logo" className="w-[85%] h-[85%] object-contain opacity-90" />
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -238,6 +321,10 @@ export default function Wheel({ prizes, onSpin, onSpinComplete }: WheelProps) {
                 <div className="absolute inset-0 rounded-[3rem] shadow-[inset_0_-4px_10px_rgba(0,0,0,0.1)] pointer-events-none"></div>
                 <span className="relative z-10">{hasWon ? t('wheel.you_won') : isSpinning ? 'WAIT...' : t('wheel.spin_now')}</span>
             </button>
+
+            <p className="mt-6 text-[10px] md:text-xs text-zinc-500 max-w-sm text-center px-4 leading-relaxed font-sans">
+                {t('wheel.disclaimer')}
+            </p>
         </div>
     );
 }
