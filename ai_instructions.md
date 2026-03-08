@@ -99,3 +99,12 @@ Beim Ausrollen der App auf einen Live-Server (z.B. VPS oder Docker-Umgebung) mü
 - **PapaParse / CSV Header Hölle:** Europäische Excels exportieren oft mit Semicolons `;` statt echten Kommas. Der PapaParse Block in `AdminPage.tsx` nutzt keine hardcodierten Delimiter mehr, sondern checkt smart Header. Bleibt der Upload bei `0 imported` hängen – unbedingt den `BOM` Header (`\uFEFF`) oder das Trennzeichen (`semicolon`) checken.
 - **Timer verschwunden?** Wenn das `JSON.parse` des `active_slots` Arrays fehlschlägt, fällt das Rad auf *Aktion Beendet* und berechnet keinen `nextSlotDate`.
 - **API Security Authentication:** Routen verlangen JWT Tokens (im Header `Authorization: Bearer <token>`). Fallbacks wie `x-admin-password` sollten vermieden werden. AdminPage ist vollständig auf die JWT Authentifizierung via `login` Endpoint migriert.
+
+---
+
+## 🛠 Features & Learnings (Latest Updates)
+- **Same Code for All (`is_same_code`):** Preise können als "Generischer Code" markiert werden. In diesem Fall wird der Code beim Gewinnen **nicht** auf `is_used = 1` gesetzt. Der Admin kann so Endlos-Gutscheine (z.B. "SKATE10") importieren, ohne dass diese aufgebraucht werden.
+- **Code Management Modal:** Reale ERP-Codes können nun pro Preis in einem eigenen Modal (`CodeManagerModal.tsx`) gemanaged werden (Add, Edit, Delete). Ein strictes Case-Insensitive Duplicate-Checking (`LOWER(code)`) verhindert über alle Systeme hinweg doppelte Codes.
+- **D'Hondt Sektor-Verteilung:** Das React-Laufrad nutzt nun die mathematische D'Hondt-Methode, um die 18 Slices proportional nach `Gewichtung` zuzuweisen. Jeder Preis erhält garantiert mindestens 1 Slot. Ein Interleaved-Algorithmus (Stride-2) sorgt für die absolute mathematische Garantie, dass zwei identische Preise niemals nebeneinander gezeichnet werden!
+- **Dynamisches SVG-Rad statt Grafik:** Wegen Asymmetrien im ursprünglichen Hintergrundbild wird das Rad nun auf den Zehntel-Millimeter via React Code (`describeArc`) aufgebaut. Um den gewünschten "Grunge"-Stil zu erhalten, nutzt das Rad exklusive native SVG-Filter (`feTurbulence` & `feDisplacementMap`), sowie eine statische Logo-Ebene im Zentrum.
+- **UI-UX-Pro-Max Headers:** Der Header nutzt skalierende und responsive Bild-Logos mit sanften CSS-Fades und korrekten Drop-Shadows (orientiert an den Premium UI Regeln).
