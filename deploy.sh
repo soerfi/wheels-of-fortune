@@ -5,11 +5,8 @@ set -e
 
 echo "🚀 Starting Wheel of Fortune Deployment..."
 
-# 1. Pre-flight checks
-echo "🔍 Running Pre-Flight Checks (TypeScript Compilation)..."
-npx tsc --noEmit
-
-echo "✅ Pre-flight checks passed."
+# 1. Provide a warning that TypeScript type-checking is now happening inside the Docker build step
+echo "🔍 Pre-flight checks (TypeScript Compilation) will run inside the Docker image build process."
 
 # 2. Create data directory for SQLite persistence if it doesn't exist
 mkdir -p data
