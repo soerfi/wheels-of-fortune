@@ -20,6 +20,7 @@ function getResend() {
 
 async function startServer() {
   const app = express();
+  app.set('trust proxy', 1); // Wichtig für Rate Limiting hinter einem Reverse Proxy
   const PORT = 3000;
 
   // Security Middlewares
