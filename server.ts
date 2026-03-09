@@ -8,6 +8,11 @@ import helmet from 'helmet';
 import cors from 'cors';
 import { rateLimit } from 'express-rate-limit';
 import jwt from 'jsonwebtoken';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Initialize Resend lazily to avoid crash if key is missing
 let resendClient: Resend | null = null;
@@ -795,13 +800,22 @@ async function startServer() {
     res.json(winners);
   });
 
-  // Vite middleware for development
+  // Vite middleware for development or Static files for production
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa',
     });
     app.use(vite.middlewares);
+  } else {
+    // Serve static files from the React app build
+    app.use(express.static(path.join(__dirname, 'dist')));
+    
+    // The "catchall" handler: for any request that doesn't
+    // match one above, send back React's index.html file.
+    app.get('*', (req, res) => {
+      res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+    });
   }
 
   app.listen(PORT, '0.0.0.0', () => {
