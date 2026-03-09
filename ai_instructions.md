@@ -81,7 +81,15 @@ Beim Ausrollen der App auf einen Live-Server (z.B. VPS oder Docker-Umgebung) mü
    * Der Container baut das Frontend (`npm run build`) und startet den Express Server auf Port `3000` (`npx tsx server.ts`).
    * Über `docker-compose.yml` wird dieser interne Port `3000` nach aussen auf den Host-Port **`3005`** gemappt, um Kollisionen mit bestehenden Services (wie dem SEO Master auf 3001) zu vermeiden. Die App ist also unter `http://SERVER_IP:3005` erreichbar. Wichtig: Die Ubuntu-Firewall muss diesen Port freigeben (`sudo ufw allow 3005`).
 
-4. **Datenbank Persistenz (Volumes)**
+4. **Nginx Reverse Proxy & SSL (HTTPS)**
+   Da auf dem Server bereits andere Node-Applikationen laufen (z.B. die `app-suite` auf Port 8000), fungiert ein globaler Nginx-Container (`global-nginx-proxy`) als Türsteher.
+   * **Location:** `/home/server/app/wheels-of-fortune/deploy-proxy`
+   * **Netzwerk:** Der Proxy nutzt `network_mode: host`, um direkt auf dem Host an den Ports 80 und 443 zu lauschen.
+   * **Routing:** Anfragen an die Haupt-IP (`72.62.43.134`) werden als `default_server` an Port `8000` (App-Suite) weitergeleitet. Anfragen an `win.skate.ch` rufen Port `3005` (Wheel) auf.
+   * **SSL (Let's Encrypt):** SSL-Zertifikate werden via Certbot (`sudo certbot certonly --standalone -d win.skate.ch`) generiert und direkt aus `/etc/letsencrypt` in den Proxy-Container gemountet. Nginx erzwingt HTTPS via 301 Redirect.
+   * **App-Suite Bridge:** Falls die App-Suite separat neu gestartet wird, muss sie zwingend ins selbe Netzwerk mit dem QR-Backend gehängt werden (`docker run --network app_default ...`), da sie intern via Nginx-Upstream mit `qr-backend` kommuniziert.
+
+5. **Datenbank Persistenz (Volumes)**
    Der SQLite Pfad ist dynamisch. Durch das `docker-compose.yml` wird der lokale `/data` Ordner des Servers in den Container gemappt (`DB_PATH=/app/data/skate_wheel.db`). Achte beim manuellen Setup darauf, dass die Volume-Bindings für die persistente `skate_wheel.db` mitsamt Wal-Files erhalten bleiben!
 
 ---
