@@ -626,6 +626,7 @@ async function startServer() {
             de: 'Wir freuen uns auf dich!<br>Keep Rolling.'
           };
 
+                    const defaultDesc: any = { en: 'Here is your prize:', fr: 'Voici votre prix :', it: 'Ecco il tuo premio:', de: 'Hier ist dein Gewinn:' };
           const buttonText: any = {
             en: 'Redeem online now', fr: 'Échanger en ligne', it: 'Riscatta online', de: 'Jetzt online einlösen'
           };
@@ -641,7 +642,7 @@ async function startServer() {
                   <!-- Brand and Campaign Context Header -->
                   <tr>
                     <td align="center" style="padding: 0; text-align: center; background-color: #18181b;">
-                      <img src="${appUrl}/10years_skate.svg" alt="10 JAHRE SKATE.CH" width="600" style="width: 100%; max-width: 600px; display: block; border: 0;" />
+                      <img src="${appUrl}/10-years-skate.ch.png" alt="10 JAHRE SKATE.CH" width="600" style="width: 100%; max-width: 600px; display: block; border: 0;" />
                     </td>
                   </tr>
                   
@@ -652,44 +653,36 @@ async function startServer() {
                     </td>
                   </tr>
                   
-                  <!-- Personal Greeting & Clear Win Statement -->
+                  <!-- Personal Greeting & Pop-up Description instead of win statement -->
                   <tr>
                     <td align="center" style="padding: 30px 40px 10px 40px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
                       <p style="font-size: 16px; color: #3f3f46; margin: 0 0 10px 0; font-weight: bold;">
                         ${heyText[userLang] || heyText['de']} ${winner.first_name || winner.user_name},
                       </p>
-                      <h2 style="color: #18181b; font-size: 24px; font-weight: 900; margin: 0 0 20px 0; line-height: 1.3;">
-                        Du hast einen ${winner.value || winner.prize_value || translatedName} gewonnen!
+                      <h2 style="color: #18181b; font-size: 20px; font-weight: 900; margin: 0 0 20px 0; line-height: 1.3;">
+                        ${translatedDesc || defaultDesc[userLang] || defaultDesc['de']}
                       </h2>
                     </td>
                   </tr>
                   
                   <!-- Visual Prize Box -->
                   <tr>
-                    <td align="center" style="padding: 0 40px 30px 40px;">
+                    <td align="center" style="padding: 0 40px 15px 40px;">
                       <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #18181b; border-radius: 12px; border: 2px solid #EF4444;">
                         <tr>
                           <td align="center" style="padding: 40px 30px;">
                             
                             <!-- 1. Type of Prize -->
-                            <p style="color: #EF4444; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-weight: bold; font-size: 12px; letter-spacing: 2px; margin: 0 0 10px 0; text-transform: uppercase;">
+                            <p style="color: #EF4444; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-weight: bold; font-size: 16px; letter-spacing: 2px; margin: 0 0 10px 0; text-transform: uppercase;">
                               ${voucherText[userLang] || voucherText['de']}
                             </p>
                             
-                            <!-- 2. Value -->
-                            <h3 style="color: #ffffff; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 38px; font-weight: 900; margin: 0 0 15px 0; line-height: 1.1;">
-                              ${winner.value || winner.prize_value || translatedName}
+                            <!-- 2. Value Name -->
+                            <h3 style="color: #ffffff; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 38px; font-weight: 900; margin: 0 0 25px 0; line-height: 1.1;">
+                              ${translatedName || winner.value || winner.prize_value}
                             </h3>
                             
-                            <!-- 3. Short Description -->
-                            <p style="color: #d4d4d8; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 16px; margin: 0 0 10px 0;">
-                              ${translatedMailDesc || defaultMailDesc[userLang] || defaultMailDesc['de']}
-                            </p>
-                            
-                            <!-- 4. Conditions (Min Order) -->
-                            ${translatedMinOrder ? `<p style="color: #ef4444; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 14px; margin: 0 0 35px 0; font-weight: bold; background: rgba(239, 68, 68, 0.1); display: inline-block; padding: 4px 10px; border-radius: 4px;">${translatedMinOrder}</p>` : `<div style="height: 25px;"></div>`}
-                            
-                            <!-- 5. Voucher Code -->
+                            <!-- 3. Voucher Code -->
                             <table cellpadding="0" cellspacing="0" border="0" style="margin: 0 auto;">
                               <tr>
                                 <td align="center" style="background: #ffffff; padding: 15px 30px; border-radius: 8px;">
@@ -703,7 +696,10 @@ async function startServer() {
                               </tr>
                             </table>
                             
-                            <!-- 6. Validity -->
+                            <!-- 4. Conditions (Min Order) -->
+                            ${translatedMinOrder ? `<div style="margin-top: 25px;"><p style="color: #ef4444; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 14px; margin: 0; font-weight: bold; background: rgba(239, 68, 68, 0.1); display: inline-block; padding: 6px 12px; border-radius: 4px;">${translatedMinOrder}</p></div>` : ``}
+                            
+                            <!-- 5. Validity -->
                             <p style="color: #a1a1aa; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 12px; margin: 25px 0 0 0; text-transform: uppercase; font-weight: bold;">
                               ${validUntil[userLang] || validUntil['de']}
                             </p>
@@ -714,11 +710,29 @@ async function startServer() {
                     </td>
                   </tr>
                   
+                  <!-- Short Description UNDER the box -->
+                  <tr>
+                    <td align="center" style="padding: 0 40px 30px 40px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
+                      <p style="color: #3f3f46; font-size: 15px; margin: 0; line-height: 1.5; font-style: italic;">
+                        ${translatedMailDesc || defaultMailDesc[userLang] || defaultMailDesc['de']}
+                      </p>
+                    </td>
+                  </tr>
+                  
+                  <!-- Rules / Disclaimer for the user -->
+                  <tr>
+                    <td align="center" style="padding: 0 40px 10px 40px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
+                      <p style="font-size: 11px; color: #a1a1aa; margin: 0; line-height: 1.5; text-align: left;">
+                        Pro Person ist nur eine Teilnahme erlaubt. Preise werden ausschliesslich innerhalb der Schweiz versendet. Der Rechtsweg ist ausgeschlossen. Bei mehrfacher Teilnahme oder sonstiger missbräuchlicher Nutzung erlischt jeglicher Anspruch auf sämtliche Preise.
+                      </p>
+                    </td>
+                  </tr>
+
                   <!-- Short Usage Instructions -->
                   <tr>
                     <td align="center" style="padding: 10px 40px 30px 40px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
                       <p style="font-size: 15px; color: #3f3f46; margin: 0; line-height: 1.6;">
-                        ${translatedMailInst ? translatedMailInst.replace(/\\n/g, '<br>').replace(/\\n/g, '<br>') : (defaultMailInst[userLang] || defaultMailInst['de'])}
+                        ${translatedMailInst ? translatedMailInst.replace(/\n/g, '<br>').replace(/\n/g, '<br>') : (defaultMailInst[userLang] || defaultMailInst['de'])}
                       </p>
                     </td>
                   </tr>
