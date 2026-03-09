@@ -205,12 +205,24 @@ export default function WheelPage() {
   return (
     <div className="min-h-screen bg-zinc-100 text-zinc-900 flex flex-col items-center justify-center relative overflow-hidden py-12">
 
-      {/* Title Area Removed since the Wheel now has the massive 10 YEARS SKATE.CH logo inside it */}
-      <div className="z-10 w-full flex flex-col items-center mb-8 px-4 text-center mt-4">
-        <h2 className="text-2xl md:text-4xl font-display uppercase tracking-widest text-zinc-400 mb-2">
-          Try your luck
-        </h2>
-        <div className="w-16 h-1 bg-[#b51401] mb-4"></div>
+      {/* Dual Header Logos */}
+      <div className="z-10 w-full flex flex-col items-center justify-center mb-8 md:mb-12 px-4 mt-6 md:mt-10 gap-5 md:gap-8">
+        <motion.img
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          src="/10-years-skate.ch.png"
+          alt="10 Years Skate.ch"
+          className="w-full max-w-[280px] md:max-w-[450px] object-contain drop-shadow-xl"
+        />
+        <motion.img
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
+          src="/try-your-luck.png"
+          alt="Try Your Luck"
+          className="w-full max-w-[180px] md:max-w-[280px] object-contain drop-shadow-md"
+        />
       </div>
 
       {!isActive ? (

@@ -24,7 +24,7 @@ interface WheelProps {
 
 const FULL_ROTATION = 360;
 const POINTER_ALIGNMENT_OFFSET = 10;
-const TARGET_ANGLE_BASE = 240;
+const TARGET_ANGLE_BASE = 330;
 const EXTRA_SPINS = 8 * FULL_ROTATION;
 const MODAL_DELAY_MS = 5000;
 const RANDOM_OFFSET_FACTOR = 0.2;
@@ -88,7 +88,7 @@ export default function Wheel({ prizes, onSpin, onSpinComplete }: WheelProps) {
     const pointerRotate = useTransform(rotateX, (value) => {
         if (numPrizes === 0) return 0;
 
-        const shifted = value - POINTER_ALIGNMENT_OFFSET;
+        const shifted = value;
         const normalized = normalizeAngle(shifted);
         const distanceToNextPeg = sliceAngle - (normalized % sliceAngle);
 

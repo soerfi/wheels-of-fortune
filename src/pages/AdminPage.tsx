@@ -156,13 +156,15 @@ export default function AdminPage() {
                 min_order_value_en: row['Mindestbestellwert EN'] || '', min_order_value_fr: row['Mindestbestellwert FR'] || '', min_order_value_it: row['Mindestbestellwert IT'] || '',
                 value: row.Wert || '',
                 weight: parseInt(row.Gewichtung) || 1,
-                is_jackpot: row['Jackpot Preis'] === '1' || row['Jackpot Preis']?.toLowerCase() === 'ja' || row['Jackpot Preis']?.toLowerCase() === 'yes',
-                is_same_code: row['Same Code for all'] === '1' || row['Same Code for all']?.toLowerCase() === 'ja' || row['Same Code for all']?.toLowerCase() === 'yes',
+                is_jackpot: row['Jackpot Preis'] == '1' || String(row['Jackpot Preis']).toLowerCase() === 'ja' || String(row['Jackpot Preis']).toLowerCase() === 'yes' || String(row['Jackpot Preis']).toLowerCase() === 'true',
+                is_same_code: row['Same Code for all'] == '1' || String(row['Same Code for all']).toLowerCase() === 'ja' || String(row['Same Code for all']).toLowerCase() === 'yes' || String(row['Same Code for all']).toLowerCase() === 'true',
                 codes: []
               };
             }
-            if (row['Gutschein Codes'] && row['Gutschein Codes'].trim() !== '') {
-              prizesMap[name].codes.push(row['Gutschein Codes'].trim());
+            if (row['Gutschein Codes'] && String(row['Gutschein Codes']).trim() !== '') {
+              const codesPart = String(row['Gutschein Codes']).trim();
+              const splitCodes = codesPart.split(/[\n\r\t,; ]+/).filter(Boolean);
+              prizesMap[name].codes.push(...splitCodes);
             }
           });
 
