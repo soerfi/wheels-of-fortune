@@ -642,7 +642,7 @@ async function startServer() {
                   <!-- Brand and Campaign Context Header -->
                   <tr>
                     <td align="center" style="padding: 0; text-align: center; background-color: #ffffff;">
-                      <img src="${appUrl}/10-years-skate.ch.png" alt="10 JAHRE SKATE.CH" width="600" style="width: 100%; max-width: 600px; display: block; border: 0;" />
+                      <img src="${appUrl}/10-years-skate.ch.png" alt="10 JAHRE SKATE.CH" width="480" style="width: 80%; max-width: 480px; display: block; margin: 0 auto; border: 0;" />
                     </td>
                   </tr>
                   
@@ -659,7 +659,7 @@ async function startServer() {
                       <p style="font-size: 16px; color: #3f3f46; margin: 0 0 10px 0; font-weight: bold;">
                         ${heyText[userLang] || heyText['de']} ${winner.first_name || winner.user_name},
                       </p>
-                      <h2 style="color: #18181b; font-size: 20px; font-weight: 900; margin: 0 0 20px 0; line-height: 1.3;">
+                      <h2 style="color: #18181b; font-size: 28px; font-weight: 900; margin: 0 0 20px 0; line-height: 1.3;">
                         ${translatedDesc || defaultDesc[userLang] || defaultDesc['de']}
                       </h2>
                     </td>
