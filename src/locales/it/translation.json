@@ -10,7 +10,8 @@
         "already_spun_desc": "Hai già tentato la fortuna. Torna al prossimo giro!",
         "all_gone": "Tutto finito!",
         "all_gone_desc": "Tutti i premi sono già stati vinti. Resta sintonizzato per il prossimo round!",
-        "disclaimer": "Sono ammesse a partecipare solo le persone residenti in Svizzera. È consentita una sola partecipazione per persona. I premi saranno spediti esclusivamente in Svizzera. Sono escluse le vie legali. Cliccando su \"SPIN NOW!\" accetti queste condizioni. In caso di partecipazioni multiple o altro uso fraudolento, decadrà ogni diritto a qualsiasi premio."
+        "disclaimer": "Sono ammesse a partecipare solo le persone residenti in Svizzera. È consentita una sola partecipazione per persona. I premi saranno spediti esclusivamente in Svizzera. Sono escluse le vie legali. Cliccando su \"SPIN NOW!\" accetti queste condizioni. In caso di partecipazioni multiple o altro uso fraudolento, decadrà ogni diritto a qualsiasi premio.",
+        "shop_button": "Vai al negozio"
     },
     "modal": {
         "title": "WOOHOO! HAI VINTO!",

@@ -6,7 +6,7 @@ import { motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 
 export default function WheelPage() {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [settings, setSettings] = useState<any>(null);
   const [prizes, setPrizes] = useState<any[]>([]);
   const [wheelPrizes, setWheelPrizes] = useState<any[]>([]);
@@ -267,9 +267,17 @@ export default function WheelPage() {
             className="bg-white p-8 md:p-12 border-4 border-zinc-900 text-center max-w-lg w-full shadow-[12px_12px_0_0_#18181B]"
           >
             <h3 className="text-3xl md:text-4xl font-display mb-4 text-[#8B0000] uppercase">Schon gedreht!</h3>
-            <p className="text-zinc-600 font-bold uppercase tracking-widest leading-relaxed border-t-2 border-zinc-100 pt-6">
+            <p className="text-zinc-600 font-bold uppercase tracking-widest leading-relaxed border-t-2 border-zinc-100 pt-6 mb-8">
               Du hast dein Glück bereits versucht. Komm bei der nächsten Runde wieder vorbei!
             </p>
+            <a 
+              href="https://skate.ch/" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="inline-block px-8 py-4 bg-red-600 hover:bg-black text-white font-display text-xl uppercase tracking-widest transition-colors border-2 border-transparent hover:border-black shadow-[4px_4px_0_0_#000]"
+            >
+              {t('wheel.shop_button')}
+            </a>
           </motion.div>
         </div>
       ) : prizes.length === 0 ? (
