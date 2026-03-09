@@ -462,7 +462,21 @@ export default function AdminPage() {
                         type="checkbox" 
                         className="sr-only peer" 
                         checked={settings.test_mode === 1}
-                        onChange={(e) => setSettings({ ...settings, test_mode: e.target.checked ? 1 : 0 })}
+                        onChange={async (e) => {
+                          const newMode = e.target.checked ? 1 : 0;
+                          setSettings({ ...settings, test_mode: newMode });
+                          try {
+                            const res = await fetch('/api/settings', {
+                              method: 'PUT',
+                              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
+                              body: JSON.stringify({ ...settings, test_mode: newMode })
+                            });
+                            if (res.ok) setAppAlert({ type: 'success', message: 'Test-Modus gespeichert!' });
+                            else setAppAlert({ type: 'error', message: 'Fehler beim Speichern des Test-Modus.' });
+                          } catch (err) {
+                            setAppAlert({ type: 'error', message: 'Verbindungsfehler.' });
+                          }
+                        }}
                       />
                       <div className="w-14 h-7 bg-zinc-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-zinc-400 peer-checked:after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-red-600"></div>
                     </label>
