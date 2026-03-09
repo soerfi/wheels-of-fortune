@@ -10,7 +10,5 @@ services:
       - "443:443"
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      # Falls du SSL/Let's Encrypt einrichtest, kannst du die Zertifikate hier mounten:
-      # - ./certbot/conf:/etc/letsencrypt
-      # - ./certbot/www:/var/www/certbot
+      - /etc/letsencrypt:/etc/letsencrypt:ro
     network_mode: host # Lässt Nginx direkt auf localhost des Servers zugreifen
