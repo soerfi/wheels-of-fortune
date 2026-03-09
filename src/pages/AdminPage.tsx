@@ -428,24 +428,7 @@ export default function AdminPage() {
                     <p className="text-sm text-zinc-500 italic">Keine Slots konfiguriert. Das Rad bleibt inaktiv.</p>
                   )}
                 </div>
-                <div>
-                  <label className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">Gutschein Hintergrundbild URL</label>
-                  <input
-                    type="url"
-                    value={settings.voucher_bg_url}
-                    onChange={e => setSettings({ ...settings, voucher_bg_url: e.target.value })}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-red-500 transition-colors"
-                    placeholder="https://..."
-                  />
-                  {settings.voucher_bg_url && (
-                    <div className="mt-4 h-40 rounded-lg overflow-hidden border border-zinc-800 relative">
-                      <img src={settings.voucher_bg_url} alt="Voucher Background" className="w-full h-full object-cover" />
-                      <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                        <span className="text-white font-bold tracking-widest uppercase">Vorschau</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
+
 
                 <div className="bg-zinc-950 p-6 rounded-lg border border-red-900/50 mt-6 relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/10 rounded-full blur-3xl -mr-10 -mt-10"></div>
