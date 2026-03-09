@@ -41,10 +41,19 @@ async function startServer() {
   const spinLimiter = rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour window
     limit: 2, // Limit each IP to 2 spins per hour
-    message: { error: 'Zu viele Drehs von dieser IP, bitte warte eine Stunde.' },
+    message: { error: 'Du hast bereits am Gewinnspiel teilgenommen. Jeder Spieler kann nur 1x drehen.' },
     standardHeaders: 'draft-8',
     legacyHeaders: false,
-    skip: (req, res) => process.env.NODE_ENV !== 'production' // Skip rate limiting in DEV mode
+    skip: (req, res) => {
+      // Skip rate limiting in DEV mode or if test_mode is enabled
+      if (process.env.NODE_ENV !== 'production') return true;
+      try {
+        const settings = db.prepare('SELECT test_mode FROM settings WHERE id = 1').get() as any;
+        return settings?.test_mode === 1;
+      } catch (e) {
+        return false;
+      }
+    }
   });
 
   const loginLimiter = rateLimit({
@@ -110,9 +119,9 @@ async function startServer() {
   });
 
   app.put('/api/settings', checkAdminAuth, (req, res) => {
-    const { active_slots, voucher_bg_url } = req.body;
-    db.prepare('UPDATE settings SET active_slots = ?, voucher_bg_url = ? WHERE id = 1')
-      .run(JSON.stringify(active_slots || []), voucher_bg_url);
+    const { active_slots, voucher_bg_url, test_mode } = req.body;
+    db.prepare('UPDATE settings SET active_slots = ?, voucher_bg_url = ?, test_mode = ? WHERE id = 1')
+      .run(JSON.stringify(active_slots || []), voucher_bg_url, test_mode ? 1 : 0);
     res.json({ success: true });
   });
 
@@ -540,9 +549,12 @@ async function startServer() {
     
     // Security Check: 1 win per email
     if (user_email) {
-      const existingWinner = db.prepare('SELECT id FROM winners WHERE user_email = ? AND id != ?').get(user_email, req.params.id);
-      if (existingWinner) {
-        return res.status(400).json({ error: 'Diese E-Mail-Adresse hat bereits an diesem Gewinnspiel teilgenommen.' });
+      const settings = db.prepare('SELECT test_mode FROM settings WHERE id = 1').get() as any;
+      if (settings?.test_mode !== 1) {
+        const existingWinner = db.prepare('SELECT id FROM winners WHERE user_email = ? AND id != ?').get(user_email, req.params.id);
+        if (existingWinner) {
+          return res.status(400).json({ error: 'Diese E-Mail-Adresse hat bereits an diesem Gewinnspiel teilgenommen.' });
+        }
       }
     }
 
