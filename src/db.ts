@@ -22,7 +22,8 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS settings (
     id INTEGER PRIMARY KEY CHECK (id = 1),
     active_slots TEXT DEFAULT '[]', -- JSON array of {from: string, to: string}
-    voucher_bg_url TEXT
+    voucher_bg_url TEXT,
+    test_mode INTEGER DEFAULT 0
   );
 
   INSERT OR IGNORE INTO settings (id, active_slots, voucher_bg_url)
@@ -84,6 +85,10 @@ db.exec(`
 // Support for older schema
 try {
   db.exec('ALTER TABLE settings ADD COLUMN active_slots TEXT DEFAULT "[]";');
+} catch (e) { }
+
+try {
+  db.exec('ALTER TABLE settings ADD COLUMN test_mode INTEGER DEFAULT 0;');
 } catch (e) { }
 
 try {

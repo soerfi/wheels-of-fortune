@@ -446,6 +446,28 @@ export default function AdminPage() {
                     </div>
                   )}
                 </div>
+
+                <div className="bg-zinc-950 p-6 rounded-lg border border-red-900/50 mt-6 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/10 rounded-full blur-3xl -mr-10 -mt-10"></div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-white font-bold uppercase tracking-widest flex items-center gap-2">
+                        <Trophy size={18} className="text-red-500" />
+                        Test-Modus (Anti-Abuse deaktivieren)
+                      </h3>
+                      <p className="text-sm text-zinc-400 mt-2 max-w-lg">Wenn aktiv, werden das IP-Limit (2 Drehs/Stunde) und die E-Mail-Überprüfung im Live-System blockiert. Nutze dies <strong>ausschliesslich zum eigenen Testen</strong>!</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        className="sr-only peer" 
+                        checked={settings.test_mode === 1}
+                        onChange={(e) => setSettings({ ...settings, test_mode: e.target.checked ? 1 : 0 })}
+                      />
+                      <div className="w-14 h-7 bg-zinc-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-zinc-400 peer-checked:after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-red-600"></div>
+                    </label>
+                  </div>
+                </div>
                 <button type="submit" className="flex items-center gap-2 bg-red-600 hover:bg-red-500 text-white px-8 py-4 rounded-lg font-bold uppercase tracking-widest transition-colors">
                   <Save size={20} /> Speichern
                 </button>
