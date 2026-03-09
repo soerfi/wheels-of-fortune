@@ -58,9 +58,8 @@ export default function VoucherModal({ result, settings, onClose }: VoucherModal
 
         <div className="p-8 pb-4 text-center" aria-live="assertive">
           <h2 id="voucher-modal-title" className="text-4xl md:text-5xl font-display uppercase tracking-widest text-white mb-2 shadow-[2px_2px_0_0_#EF4444]">{t('modal.title')}</h2>
-          <p className="text-xl text-zinc-400 font-bold uppercase tracking-widest">{t('modal.desc_1')} <strong className="text-red-500">{result.prize.name}</strong></p>
           {result.prize.description && (
-            <p className="text-sm text-zinc-300 mt-4 font-medium italic max-w-lg mx-auto leading-relaxed">{result.prize.description}</p>
+            <p className="text-2xl md:text-3xl text-red-500 mt-6 font-bold uppercase tracking-widest max-w-lg mx-auto leading-relaxed">{result.prize.description}</p>
           )}
         </div>
 
