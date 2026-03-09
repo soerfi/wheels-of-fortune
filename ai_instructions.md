@@ -75,10 +75,11 @@ Beim Ausrollen der App auf einen Live-Server (z.B. VPS oder Docker-Umgebung) mü
    ```bash
    sh deploy.sh
    ```
-   Dieses Script:
-   * Führt einen TypeScript Type-Check durch (`npx tsc --noEmit`).
+   * Dieses Script:
+   * Führt einen TypeScript Type-Check pro-aktiv während des Docker Image Builds durch (im `Dockerfile`), anstatt auf dem Host.
    * Zündet via `docker-compose up -d --build` einen Container basierend auf dem `Dockerfile`.
-   * Der Container baut das Frontend (`npm run build`) und startet den Express Server auf Port `3001` (`npx tsx server.ts`).
+   * Der Container baut das Frontend (`npm run build`) und startet den Express Server auf Port `3000` (`npx tsx server.ts`).
+   * Über `docker-compose.yml` wird dieser interne Port `3000` nach aussen auf den Host-Port **`3005`** gemappt, um Kollisionen mit bestehenden Services (wie dem SEO Master auf 3001) zu vermeiden. Die App ist also unter `http://SERVER_IP:3005` erreichbar. Wichtig: Die Ubuntu-Firewall muss diesen Port freigeben (`sudo ufw allow 3005`).
 
 4. **Datenbank Persistenz (Volumes)**
    Der SQLite Pfad ist dynamisch. Durch das `docker-compose.yml` wird der lokale `/data` Ordner des Servers in den Container gemappt (`DB_PATH=/app/data/skate_wheel.db`). Achte beim manuellen Setup darauf, dass die Volume-Bindings für die persistente `skate_wheel.db` mitsamt Wal-Files erhalten bleiben!
@@ -91,6 +92,7 @@ Beim Ausrollen der App auf einen Live-Server (z.B. VPS oder Docker-Umgebung) mü
 - **PapaParse / CSV Header Hölle:** Europäische Excels exportieren oft mit Semicolons `;` statt echten Kommas. Der PapaParse Block in `AdminPage.tsx` nutzt keine hardcodierten Delimiter mehr, sondern checkt smart Header. Bleibt der Upload bei `0 imported` hängen – unbedingt den `BOM` Header (`\uFEFF`) oder das Trennzeichen (`semicolon`) checken.
 - **Timer verschwunden?** Wenn das `JSON.parse` des `active_slots` Arrays fehlschlägt, fällt das Rad auf *Aktion Beendet* und berechnet keinen `nextSlotDate`.
 - **API Security Authentication:** Routen verlangen JWT Tokens (im Header `Authorization: Bearer <token>`). Fallbacks wie `x-admin-password` sollten vermieden werden. AdminPage ist vollständig auf die JWT Authentifizierung via `login` Endpoint migriert.
+- **Docker Compose v1 Crash (KeyError: 'ContainerConfig'):** Wenn ein altes Docker Image modifiziert/gelöscht wird, wehrt sich das extrem veraltete Python `docker-compose` (Ubuntu Default) manchmal wehement mit einem Stacktrace KeyError, weil er Volumes von einem Geister-Container migrieren will. Lösung: `docker-compose rm -f -s -v` um den korrupten State tiefgründig zu bereinigen, bevor man `deploy.sh` ausführt.
 
 ---
 
@@ -100,3 +102,5 @@ Beim Ausrollen der App auf einen Live-Server (z.B. VPS oder Docker-Umgebung) mü
 - **D'Hondt Sektor-Verteilung:** Das React-Laufrad nutzt nun die mathematische D'Hondt-Methode, um die 18 Slices proportional nach `Gewichtung` zuzuweisen. Jeder Preis erhält garantiert mindestens 1 Slot. Ein Interleaved-Algorithmus (Stride-2) sorgt für die absolute mathematische Garantie, dass zwei identische Preise niemals nebeneinander gezeichnet werden!
 - **Dynamisches SVG-Rad statt Grafik:** Wegen Asymmetrien im ursprünglichen Hintergrundbild wird das Rad nun auf den Zehntel-Millimeter via React Code (`describeArc`) aufgebaut. Um den gewünschten "Grunge"-Stil zu erhalten, nutzt das Rad exklusive native SVG-Filter (`feTurbulence` & `feDisplacementMap`), sowie eine statische Logo-Ebene im Zentrum.
 - **UI-UX-Pro-Max Headers:** Der Header nutzt skalierende und responsive Bild-Logos mit sanften CSS-Fades und korrekten Drop-Shadows (orientiert an den Premium UI Regeln).
+- **Skater Physics Offset:** Der "Soerfi Skater Pin" ist nicht bei 0 Grad (Top) montiert, sondern links bei `-10deg`. Der Wheel Spin Algorithmus (`TARGET_ANGLE_BASE`) wurde mathematisch auf Target `330` kalibriert, sodass jede Gewinn-Slice pixelgenau mit ihrer Mitte exakt auf der Schuhsohle des Skaters zum Stehen kommt.
+- **Robust CSV Parsing:** Das `AdminPage` PapaParse Skript zerlegt nun auch einzelne CSV Zellen mit multiplen Codes (getrennt durch Space, Komma, Semikolon oder NewLines) zuverlässig in Arrays. Dazu liest es Boolean Felder (wie "Jackpot Preis" in Gold) fehlertolerant als true, wenn die Datei "1", "ja", "yes", oder "true" (Case-Insensitive) übergibt.
