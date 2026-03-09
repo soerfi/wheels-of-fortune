@@ -24,7 +24,7 @@ export default function WheelPage() {
 
     const handleKeyDown = (e: KeyboardEvent) => {
       // Option/Alt + Shift + R to reset
-      if (e.altKey && e.shiftKey && e.key.toLowerCase() === 'r') {
+      if (e.altKey && e.shiftKey && e.code === 'KeyR') {
         localStorage.removeItem('skate_wheel_has_spun');
         window.location.reload();
       }
