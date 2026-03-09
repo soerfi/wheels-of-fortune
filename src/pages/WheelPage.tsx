@@ -21,6 +21,16 @@ export default function WheelPage() {
       setHasSpun(true);
     }
     fetchData();
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Option/Alt + Shift + R to reset
+      if (e.altKey && e.shiftKey && e.key.toLowerCase() === 'r') {
+        localStorage.removeItem('skate_wheel_has_spun');
+        window.location.reload();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
   const fetchData = async () => {
@@ -255,17 +265,10 @@ export default function WheelPage() {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             className="bg-white p-8 md:p-12 border-4 border-zinc-900 text-center max-w-lg w-full shadow-[12px_12px_0_0_#18181B]"
-            onClick={() => {
-              if (process.env.NODE_ENV !== 'production') {
-                localStorage.removeItem('skate_wheel_has_spun');
-                window.location.reload();
-              }
-            }}
           >
-            <h3 className="text-3xl md:text-4xl font-display mb-4 text-[#8B0000] uppercase cursor-pointer">Schon gedreht!</h3>
+            <h3 className="text-3xl md:text-4xl font-display mb-4 text-[#8B0000] uppercase">Schon gedreht!</h3>
             <p className="text-zinc-600 font-bold uppercase tracking-widest leading-relaxed border-t-2 border-zinc-100 pt-6">
               Du hast dein Glück bereits versucht. Komm bei der nächsten Runde wieder vorbei!
-              {process.env.NODE_ENV !== 'production' && <span className="block mt-4 text-xs text-red-500 font-mono">(DEV-MODE: Klick hier zum Zurücksetzen)</span>}
             </p>
           </motion.div>
         </div>
