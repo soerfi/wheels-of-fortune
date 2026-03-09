@@ -6,7 +6,7 @@ services:
     container_name: wheel-of-fortune
     restart: unless-stopped
     ports:
-      - "3005:3001"
+      - "3005:3000"
     volumes:
       # Mount the unique data folder to the container to persist the SQLite database.
       # This ensures skate_wheel.db and its -wal / -shm temporary files are never lost during restarts.

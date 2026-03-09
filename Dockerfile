@@ -22,7 +22,7 @@ RUN npx tsc --noEmit
 RUN npm run build
 
 # Expose the port the Express server runs on
-EXPOSE 3001
+EXPOSE 3000
 
 # Start the application using tsx since server.ts is written in TypeScript
 CMD ["npx", "tsx", "server.ts"]
