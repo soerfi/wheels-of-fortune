@@ -551,7 +551,7 @@ async function startServer() {
 
         if (winner) {
           // Determine app URL to serve background image dynamically
-          const appUrl = process.env.VITE_APP_URL || 'https://winner.skate.ch';
+          const appUrl = process.env.VITE_APP_URL || 'https://win.skate.ch';
           const backgroundUrl = `${appUrl}/Mail-Background.jpg`;
 
           // Translations mapping based on language
@@ -591,7 +591,7 @@ async function startServer() {
           };
 
           const voucherText: any = {
-            en: 'Your Voucher', fr: 'Votre bon', it: 'Il tuo buono', de: 'Dein Gutschein'
+            en: 'Your Prize', fr: 'Votre bon', it: 'Il tuo buono', de: 'Dein Gewinn'
           };
 
           const codeText: any = {
@@ -712,8 +712,8 @@ async function startServer() {
                   
                   <!-- Short Description UNDER the box -->
                   <tr>
-                    <td align="center" style="padding: 0 40px 30px 40px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
-                      <p style="color: #3f3f46; font-size: 15px; margin: 0; line-height: 1.5; font-style: italic;">
+                    <td align="center" style="padding: 25px 40px 40px 40px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
+                      <p style="color: #3f3f46; font-size: 15px; margin: 0; line-height: 1.6;">
                         ${translatedMailDesc || defaultMailDesc[userLang] || defaultMailDesc['de']}
                       </p>
                     </td>
