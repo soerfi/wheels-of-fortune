@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 
-const dbPath = path.resolve(process.cwd(), 'skate_wheel.db');
+const dbPath = process.env.DB_PATH || path.resolve(process.cwd(), 'skate_wheel.db');
 const db = new Database(dbPath);
 
 console.log('Verbinde mit Datenbank:', dbPath);
