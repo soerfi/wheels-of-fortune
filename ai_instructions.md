@@ -101,7 +101,8 @@ Beim Ausrollen der App auf einen Live-Server (z.B. VPS oder Docker-Umgebung) mü
 - **Timer verschwunden?** Wenn das `JSON.parse` des `active_slots` Arrays fehlschlägt, fällt das Rad auf *Aktion Beendet* und berechnet keinen `nextSlotDate`.
 - **API Security Authentication:** Routen verlangen JWT Tokens (im Header `Authorization: Bearer <token>`). Fallbacks wie `x-admin-password` sollten vermieden werden. AdminPage ist vollständig auf die JWT Authentifizierung via `login` Endpoint migriert.
 - **Docker Compose v1 Crash (KeyError: 'ContainerConfig'):** Wenn ein altes Docker Image modifiziert/gelöscht wird, wehrt sich das extrem veraltete Python `docker-compose` (Ubuntu Default) manchmal wehement mit einem Stacktrace KeyError, weil er Volumes von einem Geister-Container migrieren will. Lösung: `docker-compose rm -f -s -v` um den korrupten State tiefgründig zu bereinigen, bevor man `deploy.sh` ausführt.
-
+- **Datenbank manuell leeren (Docker):** Das `node:20-alpine` Docker-Image enthält aus Platzgründen **kein `sqlite3` CLI-Tool**. Soll die Live-Datenbank im Docker (z.B. Gewinner & Codes) zurückgesetzt werden, nutze direkt die `node` CLI mit `better-sqlite3`, statt kaputte Binaries zu suchen. Auch beachten, dass der DB-Pfad im Docker dank `docker-compose.yml` ENV-Variable `/app/data/skate_wheel.db` lautet:
+  `docker exec wheel-of-fortune node -e "const DB=require('better-sqlite3'); const db=new DB('/app/data/skate_wheel.db'); ['winners','prize_codes','prizes'].forEach(t=>db.exec('DELETE FROM '+t+';')); db.exec('DELETE FROM sqlite_sequence;'); console.log('Reset erfolgreich');"`
 ---
 
 ## 🛠 Features & Learnings (Latest Updates)
