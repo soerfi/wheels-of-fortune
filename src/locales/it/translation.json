@@ -25,6 +25,8 @@
         "submitting": "Elaborazione...",
         "success_title": "CONTROLLA LA TUA INBOX!",
         "success_desc": "Il tuo codice sconto ti è appena stato inviato. Buon divertimento!",
-        "error_general": "Si è verificato un errore. Per favore, riprova."
+        "error_general": "Si è verificato un errore. Per favore, riprova.",
+        "empty_fields": "Per favore, inserisci nome, cognome e indirizzo e-mail per richiedere il tuo premio.",
+        "confirm_close": "Sei sicuro? Se annulli ora, il tuo premio sarà irrevocabilmente perso!"
     }
 }

@@ -25,6 +25,8 @@
         "submitting": "Processing...",
         "success_title": "CHECK YOUR INBOX!",
         "success_desc": "Your voucher code is on its way. Have fun with your prize!",
-        "error_general": "An error occurred. Please try again."
+        "error_general": "An error occurred. Please try again.",
+        "empty_fields": "Please fill in your first name, last name, and email address to claim your prize.",
+        "confirm_close": "Are you sure? If you cancel now, your prize will be irrevocably forfeited!"
     }
 }

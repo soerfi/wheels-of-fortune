@@ -25,6 +25,8 @@
         "submitting": "Traitement en cours...",
         "success_title": "VÉRIFIEZ VOTRE BOÎTE DE RÉCEPTION !",
         "success_desc": "Votre code de bon vient de vous être envoyé. Profitez-en bien !",
-        "error_general": "Une erreur s'est produite. Veuillez réessayer."
+        "error_general": "Une erreur s'est produite. Veuillez réessayer.",
+        "empty_fields": "Veuillez remplir votre prénom, nom de famille et adresse e-mail pour réclamer votre prix.",
+        "confirm_close": "Êtes-vous sûr ? Si vous annulez maintenant, votre prix sera irrévocablement perdu !"
     }
 }

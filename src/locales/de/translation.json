@@ -25,6 +25,8 @@
         "submitting": "Wird verarbeitet...",
         "success_title": "CHECK DEIN POSTFACH!",
         "success_desc": "Dein Gutscheincode ist soeben an dich rausgegangen. Viel Spass damit!",
-        "error_general": "Es ist ein Fehler aufgetreten. Bitte versuche es noch einmal."
+        "error_general": "Es ist ein Fehler aufgetreten. Bitte versuche es noch einmal.",
+        "empty_fields": "Bitte fülle Vorname, Nachname und E-Mail-Adresse aus, um deinen Gewinn zu sichern.",
+        "confirm_close": "Bist du sicher? Wenn du jetzt abbrichst, verfällt dein Gewinn unwiderruflich!"
     }
 }
