@@ -774,36 +774,35 @@ export default function AdminPage() {
                   <table className="w-full text-left whitespace-nowrap">
                     <thead className="bg-zinc-950 border-b border-zinc-800">
                       <tr>
-                        <th className="px-6 py-4 text-sm font-bold text-zinc-400 uppercase tracking-wider">Datum</th>
-                        <th className="px-6 py-4 text-sm font-bold text-zinc-400 uppercase tracking-wider">Preis</th>
-                        <th className="px-6 py-4 text-sm font-bold text-zinc-400 uppercase tracking-wider">Code</th>
-                        <th className="px-6 py-4 text-sm font-bold text-zinc-400 uppercase tracking-wider">Name</th>
-                        <th className="px-6 py-4 text-sm font-bold text-zinc-400 uppercase tracking-wider">E-Mail</th>
-                        <th className="px-6 py-4 text-sm font-bold text-zinc-400 uppercase tracking-wider">IP Adresse</th>
-                        <th className="px-6 py-4 text-sm font-bold text-zinc-400 uppercase tracking-wider text-center">Newsletter</th>
+                        <th className="px-6 py-4 text-sm font-bold text-zinc-400 uppercase tracking-wider">Datum & Zeit</th>
+                        <th className="px-6 py-4 text-sm font-bold text-zinc-400 uppercase tracking-wider">Gewinn</th>
+                        <th className="px-6 py-4 text-sm font-bold text-zinc-400 uppercase tracking-wider">Gewinner</th>
                         <th className="px-6 py-4 text-sm font-bold text-zinc-400 uppercase tracking-wider text-right">Aktion</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-zinc-800">
                       {winners.map(winner => (
                         <tr key={winner.id} className="hover:bg-zinc-800/50 transition-colors">
-                          <td className="px-6 py-4 text-zinc-400">
-                            {new Date(winner.won_at).toLocaleString('de-CH')}
-                          </td>
-                          <td className="px-6 py-4 font-bold">{winner.prize_name || 'Unbekannt'}</td>
-                          <td className="px-6 py-4 font-mono text-red-400">{winner.code}</td>
                           <td className="px-6 py-4">
-                            {winner.user_name || '-'}
-                            {winner.is_duplicate === 1 && (
-                              <span className="ml-2 text-[10px] uppercase tracking-widest bg-red-500/10 text-red-500 px-2 py-0.5 rounded font-bold">Duplikat</span>
-                            )}
+                            <div className="text-zinc-400 font-bold">{new Date(winner.won_at).toLocaleDateString('de-CH')}</div>
+                            <div className="text-zinc-500 text-xs mt-1">{new Date(winner.won_at).toLocaleTimeString('de-CH')}</div>
                           </td>
-                          <td className="px-6 py-4 text-zinc-400">{winner.user_email || '-'}</td>
-                          <td className="px-6 py-4 text-zinc-500 font-mono text-xs">{winner.user_ip || '-'}</td>
-                          <td className="px-6 py-4 text-center">
-                            <span className={`text-xs px-2 py-1 rounded uppercase font-bold tracking-wider ${winner.newsletter ? 'bg-green-500/10 text-green-500' : 'bg-zinc-800 text-zinc-500'}`}>
-                              {winner.newsletter ? 'Ja' : 'Nein'}
-                            </span>
+                          <td className="px-6 py-4">
+                            <div className="font-bold">{winner.prize_name || 'Unbekannt'}</div>
+                            <div className="font-mono text-xs text-red-400 mt-1">{winner.code}</div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold">{winner.user_name || '-'}</span>
+                              {winner.is_duplicate === 1 && (
+                                <span className="text-[10px] uppercase tracking-widest bg-red-500/10 text-red-500 px-2 py-0.5 rounded font-bold">Duplikat</span>
+                              )}
+                              {winner.newsletter === 1 && (
+                                <span className="text-[10px] uppercase tracking-widest bg-green-500/10 text-green-500 px-2 py-0.5 rounded font-bold">Newsletter</span>
+                              )}
+                            </div>
+                            <div className="text-zinc-400 text-sm mt-1">{winner.user_email || '-'}</div>
+                            <div className="text-zinc-600 font-mono text-[10px] mt-0.5" title="IP Adresse">{winner.user_ip || '-'}</div>
                           </td>
                           <td className="px-6 py-4 text-right">
                             {winner.email_sent === 0 && (
@@ -814,7 +813,7 @@ export default function AdminPage() {
                       ))}
                       {winners.length === 0 && (
                         <tr>
-                          <td colSpan={6} className="px-6 py-8 text-center text-zinc-500">Noch keine Gewinner.</td>
+                          <td colSpan={4} className="px-6 py-8 text-center text-zinc-500">Noch keine Gewinner.</td>
                         </tr>
                       )}
                     </tbody>
