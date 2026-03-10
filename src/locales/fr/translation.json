@@ -10,7 +10,7 @@
         "already_spun_desc": "Vous avez déjà tenté votre chance. Revenez au prochain tour !",
         "all_gone": "Plus rien !",
         "all_gone_desc": "Tous les prix ont déjà été gagnés. Restez à l'écoute pour le prochain tour !",
-        "disclaimer": "Seules les personnes résidant en Suisse sont autorisées à participer. Une seule participation par personne est autorisée. Les prix seront exclusivement expédiés en Suisse. Tout recours légal est exclu. En cliquant sur « SPIN NOW! », vous acceptez ces conditions. En cas de participations multiples ou de toute autre utilisation abusive, tout droit aux prix sera annulé.",
+        "disclaimer": "Seules les personnes résidant en Suisse sont autorisées à participer. Une seule participation par personne est autorisée. Les prix seront exclusivement expédiés en Suisse. Tout recours légal est exclu. En cliquant sur « SPIN NOW! », vous acceptez ces conditions. En cas de participations multiples ou de toute autre utilisation abusive (ex: utilisation de la même adresse e-mail), le code du bon/le prix sera supprimé et tout droit aux prix sera annulé.",
         "shop_button": "Aller à la boutique"
     },
     "modal": {

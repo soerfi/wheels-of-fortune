@@ -19,7 +19,7 @@ export default function VoucherModal({ result, settings, onClose }: VoucherModal
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      await fetch(`/api/winners/${result.id}`, {
+      const res = await fetch(`/api/winners/${result.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -30,9 +30,13 @@ export default function VoucherModal({ result, settings, onClose }: VoucherModal
           language: i18n?.language?.split('-')[0].toLowerCase() || 'de'
         })
       });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || t('modal.error_general'));
+      }
       setStep(2);
-    } catch (error) {
-      alert(t('modal.error_general'));
+    } catch (error: any) {
+      alert(error.message || t('modal.error_general'));
     } finally {
       setIsSubmitting(false);
     }
