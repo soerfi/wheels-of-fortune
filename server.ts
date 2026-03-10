@@ -837,6 +837,31 @@ async function startServer() {
     res.json(winners);
   });
 
+  app.delete('/api/winners/:id', checkAdminAuth, (req, res) => {
+    try {
+      const winner = db.prepare('SELECT code, prize_id, email_sent FROM winners WHERE id = ?').get(req.params.id) as any;
+      if (!winner) return res.status(404).json({ error: 'Gewinner nicht gefunden' });
+      if (winner.email_sent === 1) return res.status(400).json({ error: 'Gewinner kann nicht mehr gelöscht werden, da die E-Mail bereits versendet wurde.' });
+
+      db.transaction(() => {
+        // Release code to pool
+        if (winner.code) {
+          const prize = db.prepare('SELECT is_same_code FROM prizes WHERE id = ?').get(winner.prize_id) as any;
+          if (prize && !prize.is_same_code) {
+            db.prepare('UPDATE prize_codes SET is_used = 0 WHERE code = ? AND prize_id = ?').run(winner.code, winner.prize_id);
+          }
+        }
+        // Delete winner record
+        db.prepare('DELETE FROM winners WHERE id = ?').run(req.params.id);
+      })();
+
+      res.json({ success: true });
+    } catch (e) {
+      console.error('Delete winner error:', e);
+      res.status(500).json({ error: 'Fehler beim Löschen des Gewinners' });
+    }
+  });
+
   // Vite middleware for development or Static files for production
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({

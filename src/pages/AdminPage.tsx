@@ -281,6 +281,7 @@ export default function AdminPage() {
   };
 
   const [prizeToDelete, setPrizeToDelete] = useState<number | null>(null);
+  const [winnerToDelete, setWinnerToDelete] = useState<number | null>(null);
 
   const handleDeletePrize = async () => {
     if (!prizeToDelete) return;
@@ -293,6 +294,26 @@ export default function AdminPage() {
       fetchData();
     } catch (err) {
       setAppAlert({ type: 'error', message: 'Fehler beim Löschen.' });
+    }
+  };
+
+  const handleDeleteWinner = async () => {
+    if (!winnerToDelete) return;
+    try {
+      const res = await fetch(`/api/winners/${winnerToDelete}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${authToken}` }
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        setAppAlert({ type: 'error', message: err.error || 'Fehler beim Löschen des Gewinners.' });
+      } else {
+        setAppAlert({ type: 'success', message: 'Gewinner gelöscht und Code wieder freigegeben.' });
+      }
+      setWinnerToDelete(null);
+      fetchData();
+    } catch (err) {
+      setAppAlert({ type: 'error', message: 'Fehler beim Löschen des Gewinners.' });
     }
   };
 
@@ -760,6 +781,7 @@ export default function AdminPage() {
                         <th className="px-6 py-4 text-sm font-bold text-zinc-400 uppercase tracking-wider">E-Mail</th>
                         <th className="px-6 py-4 text-sm font-bold text-zinc-400 uppercase tracking-wider">IP Adresse</th>
                         <th className="px-6 py-4 text-sm font-bold text-zinc-400 uppercase tracking-wider text-center">Newsletter</th>
+                        <th className="px-6 py-4 text-sm font-bold text-zinc-400 uppercase tracking-wider text-right">Aktion</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-zinc-800">
@@ -782,6 +804,11 @@ export default function AdminPage() {
                             <span className={`text-xs px-2 py-1 rounded uppercase font-bold tracking-wider ${winner.newsletter ? 'bg-green-500/10 text-green-500' : 'bg-zinc-800 text-zinc-500'}`}>
                               {winner.newsletter ? 'Ja' : 'Nein'}
                             </span>
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            {winner.email_sent === 0 && (
+                              <button title="Gewinner löschen & Code freigeben" onClick={() => setWinnerToDelete(winner.id)} className="p-2 text-zinc-400 hover:text-red-500 transition-colors"><Trash2 size={18} /></button>
+                            )}
                           </td>
                         </tr>
                       ))}
@@ -817,6 +844,33 @@ export default function AdminPage() {
                 </button>
                 <button
                   onClick={handleDeletePrize}
+                  className="flex-1 py-4 bg-red-600 hover:bg-white border-2 border-transparent hover:border-black text-white hover:text-black font-bold uppercase tracking-widest transition-all hover:-translate-y-1 hover:shadow-[-4px_4px_0_0_#000] cursor-pointer"
+                >
+                  Löschen
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      }
+      {/* WINNER DELETE CONFIRMATION MODAL */}
+      {
+        winnerToDelete && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
+            <div className="w-full max-w-md bg-zinc-950 border-4 border-white shadow-[16px_16px_0_0_#EF4444] p-8" role="dialog" aria-modal="true">
+              <h3 className="text-4xl font-display uppercase tracking-widest text-white mb-4">Gewinner Löschen?</h3>
+              <p className="text-zinc-400 font-bold uppercase tracking-wider mb-8">
+                Möchtest du diesen Gewinner wirklich löschen? Der gewonnene Gutscheincode wird dabei sofort wieder für künftige Drehs freigegeben.
+              </p>
+              <div className="flex gap-4">
+                <button
+                  onClick={() => setWinnerToDelete(null)}
+                  className="flex-1 py-4 border-2 border-zinc-700 hover:border-white text-zinc-400 hover:text-white font-bold uppercase tracking-widest transition-colors cursor-pointer"
+                >
+                  Abbrechen
+                </button>
+                <button
+                  onClick={handleDeleteWinner}
                   className="flex-1 py-4 bg-red-600 hover:bg-white border-2 border-transparent hover:border-black text-white hover:text-black font-bold uppercase tracking-widest transition-all hover:-translate-y-1 hover:shadow-[-4px_4px_0_0_#000] cursor-pointer"
                 >
                   Löschen
