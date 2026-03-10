@@ -14,9 +14,19 @@ export default function VoucherModal({ result, settings, onClose }: VoucherModal
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [formData, setFormData] = useState({ firstName: '', lastName: '', email: '', newsletter: true });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [alertInfo, setAlertInfo] = useState<{type: 'close' | 'empty', message: string} | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!formData.firstName.trim() || !formData.lastName.trim() || !formData.email.trim()) {
+      setAlertInfo({
+        type: 'empty', 
+        message: t('modal.empty_fields') || "Bitte fülle Vorname, Nachname und E-Mail-Adresse aus, um deinen Gewinn zu sichern."
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const res = await fetch(`/api/winners/${result.id}`, {
@@ -48,9 +58,10 @@ export default function VoucherModal({ result, settings, onClose }: VoucherModal
 
   const handleClose = () => {
     if (step === 1) {
-      if (window.confirm(t('modal.confirm_close') || "Bist du sicher? Wenn du jetzt abbrichst, verfällt dein Gewinn unwiderruflich!")) {
-        window.location.href = 'https://skate.ch/';
-      }
+      setAlertInfo({
+        type: 'close', 
+        message: t('modal.confirm_close') || "Bist du sicher? Wenn du jetzt abbrichst, verfällt dein Gewinn unwiderruflich!"
+      });
     } else {
       window.location.href = 'https://skate.ch/';
     }
@@ -66,6 +77,52 @@ export default function VoucherModal({ result, settings, onClose }: VoucherModal
         aria-modal="true"
         aria-labelledby="voucher-modal-title"
       >
+        {/* Brutalist Custom Alert Overlay */}
+        {alertInfo && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-6">
+            <motion.div
+              initial={{ scale: 0.95, y: 10 }}
+              animate={{ scale: 1, y: 0 }}
+              className="bg-zinc-900 border-4 border-white p-8 max-w-md w-full shadow-[12px_12px_0_0_#EF4444] text-center"
+            >
+              <div className="w-16 h-16 mx-auto bg-red-600 flex items-center justify-center mb-6">
+                <span className="font-display text-white text-4xl">!</span>
+              </div>
+              <h3 className="font-display text-2xl text-white uppercase tracking-widest mb-4">
+                {alertInfo.type === 'close' ? 'Achtung' : 'Eingabe Fehlt'}
+              </h3>
+              <p className="text-zinc-400 font-bold tracking-widest uppercase mb-8 leading-relaxed text-sm">
+                {alertInfo.message}
+              </p>
+              
+              <div className="flex gap-4 justify-center">
+                {alertInfo.type === 'close' ? (
+                  <>
+                    <button 
+                      onClick={() => window.location.href = 'https://skate.ch/'}
+                      className="px-6 py-4 bg-zinc-800 text-white font-bold uppercase tracking-widest border-2 border-transparent hover:border-white transition-colors text-sm"
+                    >
+                      Gewinn aufgeben
+                    </button>
+                    <button 
+                      onClick={() => setAlertInfo(null)}
+                      className="px-6 py-4 bg-red-600 text-white font-bold uppercase tracking-widest border-2 border-transparent hover:border-black hover:shadow-[-4px_4px_0_0_#FFF] transition-all text-sm"
+                    >
+                      Zurück
+                    </button>
+                  </>
+                ) : (
+                  <button 
+                    onClick={() => setAlertInfo(null)}
+                    className="px-8 py-4 w-full bg-white text-black font-bold uppercase tracking-widest border-2 border-transparent hover:bg-zinc-300 transition-colors shadow-[4px_4px_0_0_#52525B]"
+                  >
+                    Verstanden
+                  </button>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
         <button
           onClick={handleClose}
           aria-label="Schliessen"
@@ -115,13 +172,12 @@ export default function VoucherModal({ result, settings, onClose }: VoucherModal
             {step === 1 ? (
               <div className="p-8 max-w-md mx-auto">
                 <p className="text-zinc-400 mb-6 text-center font-bold tracking-widest uppercase">{t('modal.desc_2')}</p>
-                <form onSubmit={handleSubmit} className="space-y-5">
+                <form onSubmit={handleSubmit} className="space-y-5" noValidate>
                   <div className="flex gap-4">
                     <div className="w-1/2">
                       <label className="block text-sm font-bold text-white uppercase tracking-widest mb-2">{t('modal.first_name')}</label>
                       <input
                         type="text"
-                        required
                         value={formData.firstName}
                         onChange={e => setFormData({ ...formData, firstName: e.target.value })}
                         className="w-full bg-zinc-900 border-2 border-zinc-700 px-4 py-3 text-white focus:outline-none focus:border-white transition-colors rounded-none"
@@ -131,7 +187,6 @@ export default function VoucherModal({ result, settings, onClose }: VoucherModal
                       <label className="block text-sm font-bold text-white uppercase tracking-widest mb-2">{t('modal.last_name')}</label>
                       <input
                         type="text"
-                        required
                         value={formData.lastName}
                         onChange={e => setFormData({ ...formData, lastName: e.target.value })}
                         className="w-full bg-zinc-900 border-2 border-zinc-700 px-4 py-3 text-white focus:outline-none focus:border-white transition-colors rounded-none"
@@ -143,7 +198,6 @@ export default function VoucherModal({ result, settings, onClose }: VoucherModal
                     <label className="block text-sm font-bold text-white uppercase tracking-widest mb-2">{t('modal.email')}</label>
                     <input
                       type="email"
-                      required
                       value={formData.email}
                       onChange={e => setFormData({ ...formData, email: e.target.value })}
                       className="w-full bg-zinc-900 border-2 border-zinc-700 px-4 py-3 text-white focus:outline-none focus:border-white transition-colors rounded-none"
