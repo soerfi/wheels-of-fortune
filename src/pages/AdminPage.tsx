@@ -636,8 +636,8 @@ export default function AdminPage() {
               </div>
 
               {/* Prizes List */}
-              <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden mt-8">
-                <table className="w-full text-left">
+              <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-x-auto mt-8">
+                <table className="w-full text-left whitespace-nowrap">
                   <thead className="bg-zinc-950 border-b border-zinc-800">
                     <tr>
                       <th className="px-6 py-4 text-sm font-bold text-zinc-400 uppercase tracking-wider">Name</th>
@@ -770,8 +770,8 @@ export default function AdminPage() {
                     <Download size={20} /> CSV Export
                   </button>
                 </div>
-                <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
-                  <table className="w-full text-left">
+                <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-x-auto">
+                  <table className="w-full text-left whitespace-nowrap">
                     <thead className="bg-zinc-950 border-b border-zinc-800">
                       <tr>
                         <th className="px-6 py-4 text-sm font-bold text-zinc-400 uppercase tracking-wider">Datum</th>
