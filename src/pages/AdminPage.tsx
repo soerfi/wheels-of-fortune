@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
-import { Settings, Gift, Trophy, Plus, Trash2, Edit2, Save, X, Download, Upload, Eye, Ticket, Copy } from 'lucide-react';
+import { Settings, Gift, Trophy, Plus, Trash2, Edit2, Save, X, Download, Upload, Eye, Ticket, Copy, RefreshCw } from 'lucide-react';
 import Papa from 'papaparse';
 import AlertModal from '../components/AlertModal';
 import CodeManagerModal from '../components/CodeManagerModal';
@@ -742,7 +742,13 @@ export default function AdminPage() {
           {
             activeTab === 'winners' && (
               <div className="space-y-6">
-                <div className="flex justify-end">
+                <div className="flex justify-end gap-4">
+                  <button
+                    onClick={fetchData}
+                    className="flex items-center gap-2 px-6 py-3 border-2 border-zinc-700 hover:border-white text-zinc-400 hover:text-white rounded-lg font-bold uppercase tracking-wider transition-colors"
+                  >
+                    <RefreshCw size={20} /> Aktualisieren
+                  </button>
                   <button
                     onClick={() => {
                       const csvContent = [

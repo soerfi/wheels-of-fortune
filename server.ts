@@ -39,9 +39,9 @@ async function startServer() {
 
   // Rate Limiting
   const spinLimiter = rateLimit({
-    windowMs: 60 * 60 * 1000, // 1 hour window
-    limit: 2, // Limit each IP to 2 spins per hour
-    message: { error: 'Du hast bereits am Gewinnspiel teilgenommen. Jeder Spieler kann nur 1x drehen.' },
+    windowMs: 24 * 60 * 60 * 1000, // 24 hour window
+    limit: 3, // Allow 3 hits per IP at the primitive HTTP level to avoid blocking entire offices immediately, but the DB will strictly enforce 1 win/spin per 24h below.
+    message: { error: 'Du hast bereits am Gewinnspiel teilgenommen. Jeder Spieler kann nur 1x pro Tag drehen.' },
     standardHeaders: 'draft-8',
     legacyHeaders: false,
     skip: (req, res) => {
@@ -486,6 +486,19 @@ async function startServer() {
 
     if (!isActive) {
       return res.status(400).json({ error: 'Wheel is currently inactive.' });
+    }
+
+    // Strict IP-based database limit check (1 spin/win per 24 hours)
+    const userIpRaw = req.headers['x-forwarded-for'] || req.socket.remoteAddress || req.ip || '';
+    const userIp = Array.isArray(userIpRaw) ? userIpRaw[0] : (typeof userIpRaw === 'string' ? userIpRaw.split(',')[0].trim() : String(userIpRaw));
+
+    if (userIp && settings?.test_mode !== 1) {
+      const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const recentSpins = db.prepare('SELECT COUNT(*) as count FROM winners WHERE user_ip = ? AND won_at > ?').get(userIp, oneDayAgo) as { count: number };
+
+      if (recentSpins.count >= 1) {
+        return res.status(429).json({ error: 'Du hast bereits am Gewinnspiel teilgenommen. Jeder Spieler kann nur 1x pro Tag drehen.' });
+      }
     }
 
     // Get available prizes (has unused codes)
