@@ -532,8 +532,11 @@ async function startServer() {
           db.prepare('UPDATE prize_codes SET is_used = 1 WHERE id = ?').run(codeRow.id);
         }
 
-        const insertResult = db.prepare('INSERT INTO winners (prize_id, code, won_at) VALUES (?, ?, ?)')
-          .run(winningPrize.id, codeRow.code, new Date().toISOString());
+        const userIpRaw = req.headers['x-forwarded-for'] || req.socket.remoteAddress || req.ip || '';
+        const userIp = Array.isArray(userIpRaw) ? userIpRaw[0] : (typeof userIpRaw === 'string' ? userIpRaw.split(',')[0].trim() : String(userIpRaw));
+
+        const insertResult = db.prepare('INSERT INTO winners (prize_id, code, won_at, user_ip) VALUES (?, ?, ?, ?)')
+          .run(winningPrize.id, codeRow.code, new Date().toISOString(), userIp);
         insertId = insertResult.lastInsertRowid;
       })();
     } catch (e) {
@@ -546,7 +549,7 @@ async function startServer() {
 
   app.put('/api/winners/:id', async (req, res) => {
     const { first_name, last_name, newsletter, user_email, language } = req.body;
-    
+
     // Security Check: 1 win per email
     let isDuplicate = false;
     if (user_email) {
@@ -665,7 +668,7 @@ async function startServer() {
             de: 'Wir freuen uns auf dich!<br>Keep Rolling.'
           };
 
-                    const defaultDesc: any = { en: 'Here is your prize:', fr: 'Voici votre prix :', it: 'Ecco il tuo premio:', de: 'Hier ist dein Gewinn:' };
+          const defaultDesc: any = { en: 'Here is your prize:', fr: 'Voici votre prix :', it: 'Ecco il tuo premio:', de: 'Hier ist dein Gewinn:' };
           const buttonText: any = {
             en: 'Redeem online now', fr: 'Échanger en ligne', it: 'Riscatta online', de: 'Jetzt online einlösen'
           };
@@ -844,7 +847,7 @@ async function startServer() {
   } else {
     // Serve static files from the React app build
     app.use(express.static(path.join(__dirname, 'dist')));
-    
+
     // The "catchall" handler: for any request that doesn't
     // match one above, send back React's index.html file.
     app.get('*', (req, res) => {

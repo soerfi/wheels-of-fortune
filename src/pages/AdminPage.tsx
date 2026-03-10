@@ -441,9 +441,9 @@ export default function AdminPage() {
                       <p className="text-sm text-zinc-400 mt-2 max-w-lg">Wenn aktiv, werden das IP-Limit (2 Drehs/Stunde) und die E-Mail-Überprüfung im Live-System blockiert. Nutze dies <strong>ausschliesslich zum eigenen Testen</strong>!</p>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
-                      <input 
-                        type="checkbox" 
-                        className="sr-only peer" 
+                      <input
+                        type="checkbox"
+                        className="sr-only peer"
                         checked={settings.test_mode === 1}
                         onChange={async (e) => {
                           const newMode = e.target.checked ? 1 : 0;
@@ -725,7 +725,7 @@ export default function AdminPage() {
                   <button
                     onClick={() => {
                       const csvContent = [
-                        ['Datum', 'Preis', 'Code', 'Name', 'E-Mail', 'Newsletter', 'Duplikat'],
+                        ['Datum', 'Preis', 'Code', 'Name', 'E-Mail', 'Newsletter', 'Duplikat', 'IP Adresse'],
                         ...winners.map(w => [
                           new Date(w.won_at).toLocaleString('de-CH'),
                           w.prize_name || 'Unbekannt',
@@ -733,7 +733,8 @@ export default function AdminPage() {
                           w.user_name || '',
                           w.user_email || '',
                           w.newsletter ? 'Ja' : 'Nein',
-                          w.is_duplicate === 1 ? 'Ja' : 'Nein'
+                          w.is_duplicate === 1 ? 'Ja' : 'Nein',
+                          w.user_ip || ''
                         ])
                       ].map(e => e.join(';')).join('\n');
 
@@ -757,6 +758,7 @@ export default function AdminPage() {
                         <th className="px-6 py-4 text-sm font-bold text-zinc-400 uppercase tracking-wider">Code</th>
                         <th className="px-6 py-4 text-sm font-bold text-zinc-400 uppercase tracking-wider">Name</th>
                         <th className="px-6 py-4 text-sm font-bold text-zinc-400 uppercase tracking-wider">E-Mail</th>
+                        <th className="px-6 py-4 text-sm font-bold text-zinc-400 uppercase tracking-wider">IP Adresse</th>
                         <th className="px-6 py-4 text-sm font-bold text-zinc-400 uppercase tracking-wider text-center">Newsletter</th>
                       </tr>
                     </thead>
@@ -775,6 +777,7 @@ export default function AdminPage() {
                             )}
                           </td>
                           <td className="px-6 py-4 text-zinc-400">{winner.user_email || '-'}</td>
+                          <td className="px-6 py-4 text-zinc-500 font-mono text-xs">{winner.user_ip || '-'}</td>
                           <td className="px-6 py-4 text-center">
                             <span className={`text-xs px-2 py-1 rounded uppercase font-bold tracking-wider ${winner.newsletter ? 'bg-green-500/10 text-green-500' : 'bg-zinc-800 text-zinc-500'}`}>
                               {winner.newsletter ? 'Ja' : 'Nein'}
