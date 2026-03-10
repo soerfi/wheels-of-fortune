@@ -57,7 +57,7 @@ export default function VoucherModal({ result, settings, onClose }: VoucherModal
         aria-labelledby="voucher-modal-title"
       >
         <button
-          onClick={onClose}
+          onClick={() => window.location.href = 'https://skate.ch/'}
           aria-label="Schliessen"
           className="absolute top-4 right-4 z-10 p-2 bg-black hover:bg-white text-white hover:text-black border-2 border-white transition-colors"
         >
@@ -182,7 +182,7 @@ export default function VoucherModal({ result, settings, onClose }: VoucherModal
                   <strong className="text-white border-b-2 border-red-500">{formData.email}</strong>
                 </p>
                 <button
-                  onClick={onClose}
+                  onClick={() => window.location.href = 'https://skate.ch/'}
                   className="mt-8 px-8 py-4 bg-zinc-800 hover:bg-zinc-700 text-white font-bold uppercase tracking-widest transition-colors w-full border-2 border-zinc-700"
                 >
                   OK!
