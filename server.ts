@@ -548,20 +548,33 @@ async function startServer() {
     const { first_name, last_name, newsletter, user_email, language } = req.body;
     
     // Security Check: 1 win per email
+    let isDuplicate = false;
     if (user_email) {
       const settings = db.prepare('SELECT test_mode FROM settings WHERE id = 1').get() as any;
       if (settings?.test_mode !== 1) {
         const existingWinner = db.prepare('SELECT id FROM winners WHERE user_email = ? AND id != ?').get(user_email, req.params.id);
         if (existingWinner) {
-          return res.status(400).json({ error: 'Diese E-Mail-Adresse hat bereits an diesem Gewinnspiel teilgenommen.' });
+          isDuplicate = true;
         }
       }
     }
 
     const user_name = `${first_name} ${last_name}`.trim();
     const userLang = language || 'de';
-    db.prepare('UPDATE winners SET user_name = ?, first_name = ?, last_name = ?, newsletter = ?, user_email = ?, language = ? WHERE id = ?')
-      .run(user_name, first_name || '', last_name || '', newsletter ? 1 : 0, user_email, userLang, req.params.id);
+    db.prepare('UPDATE winners SET user_name = ?, first_name = ?, last_name = ?, newsletter = ?, user_email = ?, language = ?, is_duplicate = ? WHERE id = ?')
+      .run(user_name, first_name || '', last_name || '', newsletter ? 1 : 0, user_email, userLang, isDuplicate ? 1 : 0, req.params.id);
+
+    if (isDuplicate) {
+      // Release the code back to the pool
+      const winner = db.prepare('SELECT code, prize_id FROM winners WHERE id = ?').get(req.params.id) as any;
+      if (winner && winner.code) {
+        const prize = db.prepare('SELECT is_same_code FROM prizes WHERE id = ?').get(winner.prize_id) as any;
+        if (prize && !prize.is_same_code) {
+          db.prepare('UPDATE prize_codes SET is_used = 0 WHERE code = ? AND prize_id = ?').run(winner.code, winner.prize_id);
+        }
+      }
+      return res.status(400).json({ error: 'Diese E-Mail-Adresse hat bereits an diesem Gewinnspiel teilgenommen.' });
+    }
 
     // Attempt to send email
     const resend = getResend();

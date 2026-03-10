@@ -725,16 +725,17 @@ export default function AdminPage() {
                   <button
                     onClick={() => {
                       const csvContent = [
-                        ['Datum', 'Preis', 'Code', 'Name', 'E-Mail', 'Newsletter'],
+                        ['Datum', 'Preis', 'Code', 'Name', 'E-Mail', 'Newsletter', 'Duplikat'],
                         ...winners.map(w => [
                           new Date(w.won_at).toLocaleString('de-CH'),
                           w.prize_name || 'Unbekannt',
                           w.code,
                           w.user_name || '',
                           w.user_email || '',
-                          w.newsletter ? 'Ja' : 'Nein'
+                          w.newsletter ? 'Ja' : 'Nein',
+                          w.is_duplicate === 1 ? 'Ja' : 'Nein'
                         ])
-                      ].map(e => e.join(',')).join('\n');
+                      ].map(e => e.join(';')).join('\n');
 
                       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
                       const link = document.createElement('a');
@@ -767,7 +768,12 @@ export default function AdminPage() {
                           </td>
                           <td className="px-6 py-4 font-bold">{winner.prize_name || 'Unbekannt'}</td>
                           <td className="px-6 py-4 font-mono text-red-400">{winner.code}</td>
-                          <td className="px-6 py-4">{winner.user_name || '-'}</td>
+                          <td className="px-6 py-4">
+                            {winner.user_name || '-'}
+                            {winner.is_duplicate === 1 && (
+                              <span className="ml-2 text-[10px] uppercase tracking-widest bg-red-500/10 text-red-500 px-2 py-0.5 rounded font-bold">Duplikat</span>
+                            )}
+                          </td>
                           <td className="px-6 py-4 text-zinc-400">{winner.user_email || '-'}</td>
                           <td className="px-6 py-4 text-center">
                             <span className={`text-xs px-2 py-1 rounded uppercase font-bold tracking-wider ${winner.newsletter ? 'bg-green-500/10 text-green-500' : 'bg-zinc-800 text-zinc-500'}`}>

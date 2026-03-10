@@ -78,6 +78,7 @@ db.exec(`
     user_email TEXT,
     email_sent INTEGER DEFAULT 0,
     language TEXT DEFAULT "de",
+    is_duplicate INTEGER DEFAULT 0,
     FOREIGN KEY(prize_id) REFERENCES prizes(id) ON DELETE SET NULL
   );
 `);
@@ -161,6 +162,10 @@ try {
   db.exec('ALTER TABLE prizes ADD COLUMN mail_instruction_it TEXT DEFAULT "";');
 
   db.exec('ALTER TABLE winners ADD COLUMN language TEXT DEFAULT "de";');
+} catch (e) { }
+
+try {
+  db.exec('ALTER TABLE winners ADD COLUMN is_duplicate INTEGER DEFAULT 0;');
 } catch (e) { }
 
 // Generate some dummy codes for the default prizes if prize_codes is empty
