@@ -46,6 +46,16 @@ export default function VoucherModal({ result, settings, onClose }: VoucherModal
     }
   };
 
+  const handleClose = () => {
+    if (step === 1) {
+      if (window.confirm(t('modal.confirm_close') || "Bist du sicher? Wenn du jetzt abbrichst, verfällt dein Gewinn unwiderruflich!")) {
+        window.location.href = 'https://skate.ch/';
+      }
+    } else {
+      window.location.href = 'https://skate.ch/';
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/95 backdrop-blur-md">
       <motion.div
@@ -57,7 +67,7 @@ export default function VoucherModal({ result, settings, onClose }: VoucherModal
         aria-labelledby="voucher-modal-title"
       >
         <button
-          onClick={() => window.location.href = 'https://skate.ch/'}
+          onClick={handleClose}
           aria-label="Schliessen"
           className="absolute top-4 right-4 z-10 p-2 bg-black hover:bg-white text-white hover:text-black border-2 border-white transition-colors"
         >
